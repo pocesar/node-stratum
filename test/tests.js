@@ -22,7 +22,6 @@ module.exports = {
     },
     testEventEmitter: function(done){
       server.listen(3002, function(){
-        expect(stratum.listenerCount).to.be.ok();
         expect(server.on).to.be.a('function');
         expect(server.emit).to.be.a('function');
         done();
