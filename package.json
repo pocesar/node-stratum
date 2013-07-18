@@ -1,12 +1,15 @@
 {
   "name": "stratum",
+  "version": "0.0.1",
   "repository": {
     "type":"git",
-    "url": "https://github.com/pocesar/node-stratum"
+    "url": "git://github.com/pocesar/node-stratum.git"
   },
+  "license": "GPLv2",
   "engines": {
     "node" : ">= 0.8.0"
   },
+  "main": "lib",
   "description": "Stratum protocol server for node.js",
   "keywords": [
     "stratum",
@@ -18,8 +21,15 @@
     "express"
   ],
   "dependencies": {
-    
+    "jayson": "*",
+    "es5class": "*"
   },
   "devDependencies": {
+    "mocha": "*",
+    "jshint": "*",
+    "expect.js": "*"
+  },
+  "scripts": {
+    "test": "jshint lib/index.js test/tests.js && mocha test/tests.js"
   }
 }
