@@ -1,0 +1,25 @@
+{
+  "name": "stratum",
+  "repository": {
+    "type":"git",
+    "url": "https://github.com/pocesar/node-stratum"
+  },
+  "engines": {
+    "node" : ">= 0.8.0"
+  },
+  "description": "Stratum protocol server for node.js",
+  "keywords": [
+    "stratum",
+    "bitcoin",
+    "litecoin",
+    "ppcoin",
+    "json-rpc",
+    "jayson",
+    "express"
+  ],
+  "dependencies": {
+    
+  },
+  "devDependencies": {
+  }
+}
