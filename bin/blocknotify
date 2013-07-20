@@ -1,0 +1,47 @@
+'use strict';
+
+var
+  program = require('commander'),
+  colors = require('colors'),
+  rpc = require('json-rpc2');
+
+function base64(value){
+  if (value) {
+    return (new Buffer(value)).toString('base64');
+  } else {
+    return '';
+  }
+}
+
+function blockLen(value){
+  if (value.length < 64) {
+
+  }
+  return value;
+}
+
+program
+  .option('--host [host]', 'Host where the stratum server is running', 'localhost')
+  .option('--port [port]', 'The port the stratum server is running', parseInt, 8080)
+  .option('--password <password>', 'The password set in the stratum server', base64)
+  .option('--hash <hash>', 'The new block hash', blockLen)
+  .parse(process.argv);
+
+if (!program.host || !program.port || !program.password || !program.hash) {
+  console.log('All options must be set'.red);
+  program.help();
+} else {
+  var client = new rpc.Client(
+    program.port,
+    program.host
+  );
+
+  var socket = client.connectSocket(function(err, conn){
+    client.call('mining.update_block', [program.password, program.hash], function(err, result){
+      if (err) {
+        throw err;
+      }
+      socket.end();
+    });
+  });
+}

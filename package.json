@@ -2,14 +2,21 @@
   "name": "stratum",
   "version": "0.0.1",
   "repository": {
-    "type":"git",
+    "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
   },
   "license": "GPLv2",
   "engines": {
-    "node" : ">= 0.8.0"
+    "node": ">= 0.8.0"
   },
-  "main": "lib",
+  "bin": {
+    "blocknotify": "./bin/blocknotify"
+  },
+  "main": "./lib",
+  "directories": {
+    "lib": "./lib",
+    "bin": "./bin"
+  },
   "description": "Stratum protocol server for node.js",
   "keywords": [
     "stratum",
@@ -21,8 +28,14 @@
     "express"
   ],
   "dependencies": {
-    "jayson": "*",
-    "es5class": "*"
+    "es5class": "*",
+    "commander": "*",
+    "colors": "*",
+    "json-rpc2": "*",
+    "tcp.js": "*",
+    "debug": "*",
+    "toobusy": "~0.2.3",
+    "jackpot": "0.0.3"
   },
   "devDependencies": {
     "mocha": "*",
