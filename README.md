@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/pocesar/node-stratum.png?branch=master)](https://travis-ci.org/pocesar/node-stratum)
+
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
 _WORK IN PROGRESS_
@@ -6,7 +7,8 @@ _WORK IN PROGRESS_
 node-stratum
 ============
 
-Exposes a function to enable Stratum protocol usage on Node.js and subscribe for events using EventEmitter, and accept `blocknotify` from `*coind` daemons
+Exposes a server to enable Stratum protocol usage on Node.js and subscribe for events using EventEmitter, and accept `blocknotify` from `*coind` daemons
+This is not a ready-to-use miner pool, you may use this server to implement your favorite altcoins
 
 ## Install
 
@@ -37,7 +39,7 @@ var server = Server.create({
         host: '127.0.0.1' // RPC host
     },
     rpc: { // RPC interface for this server
-        
+
     },
     host: 'localhost', // bind to address, use 0.0.0.0 for external access
     port: 8080, // port for the stratum server to listen on

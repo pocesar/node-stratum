@@ -1,8 +1,9 @@
 'use strict';
 
+require('colors');
+
 var
   program = require('commander'),
-  colors = require('colors'),
   rpc = require('json-rpc2');
 
 function base64(value){
@@ -14,9 +15,19 @@ function base64(value){
 }
 
 function blockLen(value){
-  if (value.length < 64) {
+  value = value.toString();
 
+  if (value.length < 64) {
+    for (var i = 64 - value.length; i > 0; i--) {
+      value = '0' + value;
+    }
   }
+
+  if (/[^a-f0-9]/i.test(value)) {
+    console.log('Invalid SHA256 block hash supplied'.red);
+    return null;
+  }
+
   return value;
 }
 
@@ -28,20 +39,31 @@ program
   .parse(process.argv);
 
 if (!program.host || !program.port || !program.password || !program.hash) {
-  console.log('All options must be set'.red);
+  console.log('All options must be set'.yellow);
   program.help();
 } else {
-  var client = new rpc.Client(
+  var client = rpc.Client.create(
     program.port,
     program.host
   );
 
-  var socket = client.connectSocket(function(err, conn){
-    client.call('mining.update_block', [program.password, program.hash], function(err, result){
+  var socket = client.connectSocket(function (err, conn){
+    socket.removeAllListeners('end');
+
+    conn.call('mining.update_block', [program.password, program.hash], function (err, result){
       if (err) {
-        throw err;
+        console.log('' + err + ''.red);
+      } else {
+        console.log(result);
       }
-      socket.end();
     });
+  });
+
+  socket.on('end', function(){
+    console.log('Connection closed'.grey);
+  });
+
+  socket.on('error', function(){
+    console.log('Failed to connect to host'.grey);
   });
 }
