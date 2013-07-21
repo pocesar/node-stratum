@@ -29,25 +29,95 @@ This command is called automatically if you set the `coind` options.
 ```js
 var Server = require('stratum').server;
 
+// these settings can be changed using Server.defaults as well, for every new server up
 var server = Server.create({
-    coind: {
-        enable: true, // enable the settings below
-        path: '/usr/bin/bitcoind', // path to the coind daemon to spawn
-        user: 'user', // RPC username
-        password: 'password', // RPC password
-        port: 8332, // RPC port
-        host: '127.0.0.1' // RPC host
+  /**
+   * Coin daemons, will spawn a process for each enabled process
+   */
+  coinds  : {
+    'bitcoin' : {
+      enable  : false,                // enable this coind
+      path    : '/usr/bin/bitcoind',  // path to the coind daemon to spawn
+      user    : 'user',               // RPC username
+      password: 'password',           // RPC password
+      port    : 8332,                 // RPC port
+      host    : '127.0.0.1',          // RPC host
+      args    : []                    // extra args to pass to the daemon
     },
-    rpc: { // RPC interface for this server
-
+    'litecoin': {
+      enable  : false,                 // enable this coind
+      path    : '/usr/bin/litecoind',  // path to the coind daemon to spawn
+      user    : 'user',                // RPC username
+      password: 'password',            // RPC password
+      port    : 9332,                  // RPC port
+      host    : '127.0.0.1',           // RPC host
+      args    : []                     // extra args to pass to the daemon
     },
-    host: 'localhost', // bind to address, use 0.0.0.0 for external access
-    port: 8080, // port for the stratum server to listen on
-    // or if you are on unix and will accept only local connections
-    sock: '/tmp/stratum.sock',
-    settings: {
-        toobusy: 70 // max lag before considering the server "too busy" and drop new connections
+    'ppcoin'  : {
+      enable  : false,                 // enable this coind
+      path    : '/usr/bin/ppcoind',    // path to the coind daemon to spawn
+      user    : 'user',                // RPC username
+      password: 'password',            // RPC password
+      port    : 9902,                  // RPC port
+      host    : '127.0.0.1',           // RPC host
+      args    : []                     // extra args to pass to the daemon
     }
+  },
+  /**
+   * RPC to listen interface for this server
+   */
+  rpc     : {
+    /**
+     * Bind to address
+     *
+     * @type {String}
+     */
+    host: 'localhost',
+    /**
+     * RPC port
+     *
+     * @type {Number}
+     */
+    port: 1337,
+    /**
+     * RPC password
+     *
+     * @type {String}
+     */
+    pass: 'password',
+    /**
+     * Set the UNIX socket if you are on unix and will accept only local connections
+     * like '/tmp/stratum.sock'
+     *
+     * @type {String}
+     */
+    sock: null
+  },
+  /**
+   * The server settings itself
+   */
+  settings: {
+    /**
+     * Address to set the X-Stratum header if someone connects using HTTP
+     * @type {String}
+     */
+    hostname: 'localhost',
+    /**
+     * Max server lag before considering the server "too busy" and drop new connections
+     * @type {Number}
+     */
+    toobusy : 70,
+    /**
+     * Bind to address, use 0.0.0.0 for external access
+     * @type {string}
+     */
+    host    : 'localhost',
+    /**
+     * Port for the stratum TCP server to listen on
+     * @type {Number}
+     */
+    port    : 3333
+  }
 });
 
 server.listen(function(err, res){
