@@ -84,6 +84,4 @@ Export/set the environment variable `DEBUG=stratum` on your command line
 npm star stratum
 ```
 
-`BTC: 1PskTzQjmzqB2boz67AXsv4C5YNWN4xmhu`
-`LTC: LW2kXiquqDu3GfpfBX2xNTSgjVmBPu6g3z`
-`PPC: PNKZEkDf9eBSNebu2CcxHaGuma6wHuZEBh`
+`BTC: 1PskTzQjmzqB2boz67AXsv4C5YNWN4xmhu` `LTC: LW2kXiquqDu3GfpfBX2xNTSgjVmBPu6g3z` `PPC: PNKZEkDf9eBSNebu2CcxHaGuma6wHuZEBh`

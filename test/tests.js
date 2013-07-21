@@ -11,6 +11,17 @@ module.exports = {
   afterEach: function(){
   },
   Stratum: {
+    testDeferred: function(done){
+      var
+        q = stratum.q,
+        d = q.defer();
+
+      setTimeout(function(){
+        d.resolve([1,2,3]);
+      }, 0);
+
+      d.promise.then(function(){ done(); });
+    },
     testExceptionOnListening: function(){
     },
     testEventEmitter: function(){
