@@ -35,7 +35,8 @@
     "debug": "*",
     "toobusy": "~0.2.3",
     "lodash": "*",
-    "q": "~0.9.6"
+    "q": "~0.9.6",
+    "uuid": "~1.4.1"
   },
   "devDependencies": {
     "mocha": "*",

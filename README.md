@@ -1,14 +1,25 @@
+_WORK IN PROGRESS_
+
 [![Build Status](https://travis-ci.org/pocesar/node-stratum.png?branch=master)](https://travis-ci.org/pocesar/node-stratum)
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
-_WORK IN PROGRESS_
-
 node-stratum
 ============
 
-Exposes a server to enable Stratum protocol usage on Node.js and subscribe for events using EventEmitter, and accept `blocknotify` from `*coind` daemons
-This is not a ready-to-use miner pool, you may use this server to implement your favorite altcoins
+Exposes a server to enable Stratum mining protocol (server and client) usage on Node.js and subscribe for events using EventEmitter, and accept `blocknotify` from `*coind` daemons
+This is not a ready-to-use miner pool, you may use this server to implement your favorite altcoins, all the pool logic is up to you (shares, passwords, sessions, etc).
+
+## Highlights
+
+* Defer and promise based code instead of callbacks (avoid callback hell)
+* Simple but powerful API for managing both server and client
+* Build-in support for forking a `bitcoind` (`litecoind`, etc) process and accept RPC calls
+* Easy for you to add your own procedures do the RPC server (using expose)
+* No need to worry about `.conf` files for the daemons, everything is passed through command line the best way possible (but you may override arguments)
+* Optimized code reuse with class methods
+* All classes based on `EventEmitter` by default
+* The client part make it easy, along with an RPC server, to setup a farming rig for coins, and also make possible to create a proxy from it
 
 ## Install
 
@@ -84,14 +95,7 @@ var server = Server.create({
      *
      * @type {String}
      */
-    pass: 'password',
-    /**
-     * Set the UNIX socket if you are on unix and will accept only local connections
-     * like '/tmp/stratum.sock'
-     *
-     * @type {String}
-     */
-    sock: null
+    pass: 'password'
   },
   /**
    * The server settings itself
@@ -120,28 +124,37 @@ var server = Server.create({
   }
 });
 
-server.listen(function(err, res){
-    if (err){
-        throw Error(err);
+server.on('mining', function(req, callback){
+    switch (req.method){
+        case 'mining.subscribe':
+            // req.params[0] -> if filled, it's the User Agent, like CGMiner sends
+            // Just fill the callback, the promise will be resolved and the data sent to the connected client
+            callback([subscription, extranonce1, extranonce2_size]);
+            break;
     }
-
 });
-```
 
-On unix, you may listen on a socket for even less overhead for local transport:
-
-```js
-var server = require('stratum').server;
-
-server.create({
-    sock: '/tmp/stratum.sock'
-});
+server.start();
 ```
 
 You can connect to Stratum servers as well:
 
 ```js
-var client = require('stratum').client;
+var Client = require('stratum').client;
+
+client = Client.create();
+
+client.connect({
+    host: 'localhost',
+    port: 3333
+}).then(function(){
+    return ...;
+}).then(function(value){
+    if (value){
+        //etc
+    }
+});
+
 ```
 
 ## Debugging
