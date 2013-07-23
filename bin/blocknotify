@@ -17,13 +17,7 @@ function base64(value){
 function blockLen(value){
   value = value.toString();
 
-  if (value.length < 64) {
-    for (var i = 64 - value.length; i > 0; i--) {
-      value = '0' + value;
-    }
-  }
-
-  if (/[^a-f0-9]/i.test(value)) {
+  if (/[^a-f0-9]/i.test(value) || value.length < 64) {
     console.log('Invalid SHA256 block hash supplied'.red);
     return null;
   }
@@ -33,7 +27,7 @@ function blockLen(value){
 
 program
   .option('--host [host]', 'Host where the stratum server is running', 'localhost')
-  .option('--port [port]', 'The port the stratum server is running', parseInt, 8080)
+  .option('--port [port]', 'The port the stratum server is running', parseInt, 1337)
   .option('--password <password>', 'The password set in the stratum server', base64)
   .option('--hash <hash>', 'The new block hash', blockLen)
   .parse(process.argv);
