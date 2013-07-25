@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
@@ -47,7 +47,8 @@
   "devDependencies": {
     "mocha": "*",
     "jshint": "*",
-    "expect.js": "*"
+    "expect.js": "*",
+    "sinon": "~1.7.3"
   },
   "scripts": {
     "test": "jshint lib test && mocha test/tests.js"

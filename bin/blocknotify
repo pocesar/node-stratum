@@ -19,7 +19,7 @@ function blockLen(value){
 
   if (/[^a-f0-9]/i.test(value) || value.length < 64) {
     console.log('Invalid SHA256 block hash supplied'.red);
-    return null;
+    return '';
   }
 
   return value;
@@ -30,6 +30,7 @@ program
   .option('--port [port]', 'The port the stratum server is running', parseInt, 1337)
   .option('--password <password>', 'The password set in the stratum server', base64)
   .option('--hash <hash>', 'The new block hash', blockLen)
+  .option('--source [name]', 'The coind source, defaults to "bitcoin"', 'bitcoin')
   .parse(process.argv);
 
 if (!program.host || !program.port || !program.password || !program.hash) {
@@ -44,12 +45,14 @@ if (!program.host || !program.port || !program.password || !program.hash) {
   var socket = client.connectSocket(function (err, conn){
     socket.removeAllListeners('end');
 
-    conn.call('mining.update_block', [program.password, program.hash], function (err, result){
+    conn.call('mining.update_block', [program.password, program.hash, program.source], function (err, result){
       if (err) {
-        console.log('' + err + ''.red);
+        throw err;
       } else {
         console.log(result);
       }
+
+      socket.end();
     });
   });
 

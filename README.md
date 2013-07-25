@@ -33,7 +33,7 @@ npm install stratum
 node node_modules/.bin/blocknotify --host localhost --port 1337 --password willbebase64encoded --hash abcdef...
 ```
 
-This command is called automatically if you set the `coind` options.
+This command is called automatically if you set the `coind` options, they are forked when the server is started.
 
 ## Usage
 
@@ -91,11 +91,19 @@ var server = Server.create({
      */
     port: 1337,
     /**
-     * RPC password
+     * RPC password, this needs to be a SHA256 hash, defaults to 'password'
+     * To create a hash out of your password, launch node.js and write
+     *
+     * (require('crypto')).createHash('sha256').update('password').digest('hex');
      *
      * @type {String}
      */
-    pass: 'password'
+    pass: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    /**
+     * Mode to listen. By default listen only on TCP, but you may use 'http' or 'both' (deal
+     * with HTTP and TCP at same time)
+     */
+    mode: 'tcp'
   },
   /**
    * The server settings itself
@@ -124,17 +132,17 @@ var server = Server.create({
   }
 });
 
-server.on('mining', function(req, callback){
+server.on('mining', function(req, deferred){
     switch (req.method){
         case 'mining.subscribe':
-            // req.params[0] -> if filled, it's the User Agent, like CGMiner sends
-            // Just fill the callback, the promise will be resolved and the data sent to the connected client
-            callback([subscription, extranonce1, extranonce2_size]);
+            // req.params[0] -> if filled, it's the User Agent, like CGMiner/CPUMiner sends
+            // Just resolve the deferred, the promise will be resolved and the data sent to the connected client
+            deferred.resolve([subscription, extranonce1, extranonce2_size]);
             break;
     }
 });
 
-server.start();
+server.listen();
 ```
 
 You can connect to Stratum servers as well:
@@ -156,6 +164,10 @@ client.connect({
 });
 
 ```
+
+## Examples
+
+Check the `examples` folder, each part (client and server) is completely explained, and how to proceed on each possible case.
 
 ## Debugging
 
