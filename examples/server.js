@@ -89,6 +89,10 @@ server.on('mining', function(req, deferred, socket){
     case 'mining.submit':
       deferred.resolve([true]); // accept any share, just for example purposes
       break;
+    case 'mining.get_transactions':
+      // transparency to the masses (BFGMiner asks for this), you can return an error using reject
+      deferred.reject(stratum.server.errors.METHOD_NOT_FOUND);
+      break;
     default:
       // reject is the Deferred reject function, sends an error to the socket
 
