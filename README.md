@@ -45,47 +45,6 @@ var Server = require('stratum').server;
 // these settings can be changed using Server.defaults as well, for every new server up
 var server = Server.create({
   /**
-   * Coin daemons, will spawn a process for each enabled process
-   */
-  coinds  : {
-    'bitcoin' : {
-      enable  : false,                // enable this coind
-      path    : '/usr/bin/bitcoind',  // path to the coind daemon to spawn
-      user    : 'user',               // RPC username, setting to true will generate a random 16 bytes username
-      password: 'password',           // RPC password, setting to true will generate a random 32 bytes password
-      port    : 8332,                 // RPC port
-      host    : '127.0.0.1',          // RPC host
-      args    : []                    // extra args to pass to the daemon
-    },
-    'litecoin': {
-      enable  : false,                 // enable this coind
-      path    : '/usr/bin/litecoind',  // path to the coind daemon to spawn
-      user    : 'user',                // RPC username, setting to true will generate a random 16 bytes username
-      password: 'password',            // RPC password, setting to true will generate a random 32 bytes password
-      port    : 9332,                  // RPC port
-      host    : '127.0.0.1',           // RPC host
-      args    : []                     // extra args to pass to the daemon
-    },
-    'ppcoin'  : {
-      enable  : false,                 // enable this coind
-      path    : '/usr/bin/ppcoind',    // path to the coind daemon to spawn
-      user    : 'user',                // RPC username, setting to true will generate a random 16 bytes username
-      password: 'password',            // RPC password, setting to true will generate a random 32 bytes password
-      port    : 9902,                  // RPC port
-      host    : '127.0.0.1',           // RPC host
-      args    : []                     // extra args to pass to the daemon
-    },
-    'primecoin'  : {
-      enable  : false,                 // enable this coind
-      path    : '/usr/bin/primecoind', // path to the coind daemon to spawn
-      user    : 'user',                // RPC username, setting to true will generate a random 16 bytes username
-      password: 'password',            // RPC password, setting to true will generate a random 32 bytes password
-      port    : 9911,                  // RPC port
-      host    : '127.0.0.1',           // RPC host
-      args    : []                     // extra args to pass to the daemon
-    }
-  },
-  /**
    * RPC to listen interface for this server
    */
   rpc     : {
@@ -188,6 +147,9 @@ The following documentation expects that:
 var stratum = require('stratum');
 ```
 
+This module is really modular, you may use just one part of it, without having to touch other classes. For example, you may
+use the `stratum.client` and the `stratum.rpcserver` without `stratum.daemon` or `stratum.server`.
+
 You may, at any time, extend, overload or override any classes methods and instance methods (becauase it uses ES5Class module):
 
 ```js
@@ -276,6 +238,7 @@ stratum.server.commands.hashes = function(id, any, params, you, want, to, pass, 
         id: id
     });
 };
+
 // the event `mining.hashes` will be fired on the callback
 
 server.on('mining', function(req, deferred){
@@ -285,6 +248,21 @@ server.on('mining', function(req, deferred){
         deferred.reject([any, params, you, want, to, pass, to, the, client]);
     }
 });
+
+// mining.error event is emitted when something is wrong, mining related
+
+server.on('mining.error', function(){
+
+});
+
+
+
+// the stratum.server also holds defaults for coins daemons
+console.log(server.daemons); // a list of pre-configure daemons in stratum.server.daemons
+
+// You can inject them into the server later on, using stratum.daemon
+
+server.addDaemon(server.daemons.bitcoin); //instantiates a stratum.daemon and places inside the server
 ```
 
 ## RPC
@@ -316,9 +294,9 @@ client.connect(8080, 'localhost');
 
 
 
-## Coind
+## Daemon
 
-Available through `stratum.coind`
+Available through `stratum.daemon`
 
 # Debugging
 
@@ -335,3 +313,5 @@ npm star stratum
 `LTC: LW2kXiquqDu3GfpfBX2xNTSgjVmBPu6g3z`
 
 `PPC: PNKZEkDf9eBSNebu2CcxHaGuma6wHuZEBh`
+
+`XPM: ARKZ7uVE1YS19HC8jSq5xZGkr6YAzugWBv`
