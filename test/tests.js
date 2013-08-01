@@ -69,7 +69,7 @@ module.exports = {
         }).to.throwError(/Provided daemon "\/doesnt\/exist\/%s" path doesnt exist/);
 
       },
-      testCloseException: function(done){
+      testClose: function(done){
         var daemon = stratum.Daemon.create({
             path: '/doesnt/exist/%s',
             port: 8080,

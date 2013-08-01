@@ -40,7 +40,7 @@ This command is called automatically if you set the `coind` options, they are fo
 # Usage
 
 ```js
-var Server = require('stratum').server;
+var Server = require('stratum').Server;
 
 // these settings can be changed using Server.defaults as well, for every new server up
 var server = Server.create({
@@ -118,7 +118,7 @@ server.listen();
 You can connect to Stratum servers as well:
 
 ```js
-var Client = require('stratum').client;
+var Client = require('stratum').Client;
 
 client = Client.create();
 
@@ -148,25 +148,25 @@ var stratum = require('stratum');
 ```
 
 This module is really modular, you may use just one part of it, without having to touch other classes. For example, you may
-use the `stratum.client` and the `stratum.rpcserver` without `stratum.daemon` or `stratum.server`.
+use the `stratum.Client` and the `stratum.rpcserver` without `stratum.daemon` or `stratum.Server`.
 
 You may, at any time, extend, overload or override any classes methods and instance methods (becauase it uses ES5Class module):
 
 ```js
-stratum.server.implement({
+stratum.Server.implement({
     myOwnClassMethodObject: {
     }
 });
 
-stratum.server.myOwnClassMethodObject;
+stratum.Server.myOwnClassMethodObject;
 
-stratum.server.include({
+stratum.Server.include({
     niftyFunction: function(isit){
         this.nifty = isit;
     }
 });
 
-var server = stratum.server.create();
+var server = stratum.Server.create();
 server.niftyFunction(true);
 server.nifty // true
 ```
@@ -174,16 +174,16 @@ server.nifty // true
 **WARNING**: This actually changes the original class. You may create your derived own class using:
 
 ```js
-var MyNewServer = stratum.server.define('MyNewServer', {
+var MyNewServer = stratum.Server.define('MyNewServer', {
     // Add your functions here
 });
 ```
 
-The `MyNewServer` class will inherit everything from `stratum.server`, but will retain all it's functionality.
+The `MyNewServer` class will inherit everything from `stratum.Server`, but will retain all it's functionality.
 Use `$super()` to call overloaded methods:
 
 ```js
-var MyNewServer = stratum.server.define('MyNewServer', {
+var MyNewServer = stratum.Server.define('MyNewServer', {
     sendToIt: function(){
         this.$super(); // call the original function sendToId
     }
@@ -212,19 +212,19 @@ server.listen().then(
 
 ## Server
 
-Available through `stratum.server`
+Available through `stratum.Server`
 
-You can write your own defaults that applies to all new server instances through `stratum.server.defaults`
+You can write your own defaults that applies to all new server instances through `stratum.Server.defaults`
 
 ```js
-stratum.server.defaults.settings.toobusy = 50;
+stratum.Server.defaults.settings.toobusy = 50;
 ```
 
-You can also include your own stratum method calls through `stratum.server.commands` object, the server will lookup them automatically and provide it in the event emitted callback.
+You can also include your own stratum method calls through `stratum.Server.commands` object, the server will lookup them automatically and provide it in the event emitted callback.
 The 'mining.' prefix is expected, so if you put 'hashes', it expects the command to be `mining.hashes`
 
 ```js
-stratum.server.commands.hashes = function(id, any, params, you, want, to, pass, to, the, client){
+stratum.Server.commands.hashes = function(id, any, params, you, want, to, pass, to, the, client){
     // this function is actually the "resolved" function, that sends data back to the client
     // it's reached by using deferred.resolve([...params...]); in the emitted callback
 
@@ -257,8 +257,8 @@ server.on('mining.error', function(){
 
 
 
-// the stratum.server also holds defaults for coins daemons
-console.log(server.daemons); // a list of pre-configure daemons in stratum.server.daemons
+// the stratum.Server also holds defaults for coins daemons
+console.log(server.daemons); // a list of pre-configure daemons in stratum.Server.daemons
 
 // You can inject them into the server later on, using stratum.daemon
 
@@ -267,11 +267,11 @@ server.addDaemon(server.daemons.bitcoin); //instantiates a stratum.daemon and pl
 
 ## RPC
 
-Available through `stratum.rpcserver`
+Available through `stratum.RPCServer`
 
 ## Client
 
-Available through `stratum.client`
+Available through `stratum.Client`
 
 The client can connect to a stratum server and send and receive commands like if it were a miner.
 
@@ -280,7 +280,7 @@ The main reason for this part of the module is that you can setup a stratum prox
 You may also test your pool sending arbitrary test data to see if it's responding properly.
 
 ```js
-var client = stratum.client.create();
+var client = stratum.Client.create();
 
 client.on('mining.error', function(message){
 });
@@ -296,7 +296,7 @@ client.connect(8080, 'localhost');
 
 ## Daemon
 
-Available through `stratum.daemon`
+Available through `stratum.Daemon`
 
 # Debugging
 
