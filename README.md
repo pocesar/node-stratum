@@ -71,7 +71,7 @@ var server = Server.create({
      *
      * @type {String}
      */
-    pass: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
     /**
      * Mode to listen. By default listen only on TCP, but you may use 'http' or 'both' (deal
      * with HTTP and TCP at same time)
@@ -306,7 +306,7 @@ Available through `stratum.RPCServer`.
 
 Enables you to communicate from outside the Stratum module through an JSON RPC 2.0 interface. It's optional, and you don't need to enable it, you may communicate from inside out only.
 
-It's mainly useful to receive notifications, like the `stratum-notify` bin to receive a new block hash, but you may extend the interface to accept any other commands that you deem necessary for your app.
+It's mainly useful to receive notifications (wallet, block and alert), like the `stratum-notify` bin to receive json data from the outside, but you may extend the interface to accept any other commands that you deem necessary for your app.
 
 It's advised to bind the `RPCServer` instance to either `localhost` or an internal IP range, and/or access through trusted proxies.
 
@@ -374,8 +374,13 @@ The options `path`, `args`, `notifyPath`, `notify` are optional
 stratum.Server.daemons['sillycoin'] = {
     'path': '/usr/bin/sillycoind', // optional
     'args': ['debug'], // optional
-    'notifyPath': './node_modules/.bin/stratum-notify', // optional
-    'notify': ['block', 'wallet', 'alert'], // optional, will build walletnotify, blocknotify and alertnotify parameters
+    'rpcserver': { // this whole block is optional, this is the stratum server RPC (not the daemon one))
+        'port': 8888,
+        'host': 'localhost',
+        'password': 'rpcpassword',
+        'notifyPath': './node_modules/.bin/stratum-notify', // optional
+        'notify': ['block', 'wallet', 'alert'], // optional, will build walletnotify, blocknotify and alertnotify parameters
+    }
     'name': 'SillyCoin',
     'user': 'rpcuser',
     'password': 'rpcpassword',
