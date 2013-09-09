@@ -4,22 +4,25 @@ _WORK IN PROGRESS_
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
-node-stratum
+Node.js Stratum
 ============
 
-Exposes a server to enable Stratum mining protocol (server and client) usage on Node.js and subscribe for events using EventEmitter, and accept `blocknotify` from `*coind` daemons
+Exposes a server to enable Stratum mining protocol (server and client) usage on Node.js and subscribe for events using EventEmitter, and accept `stratum-notify` from `*coind` daemons
+
 This is not a ready-to-use miner pool, you may use this server to implement your favorite altcoins, all the pool logic is up to you (shares, passwords, sessions, etc).
 
 # Highlights
 
 * Defer and promise based code instead of callbacks (avoid callback hell)
 * Simple but powerful API for managing both server and client
-* Build-in support for forking a `bitcoind` (`litecoind`, etc) process and accept RPC calls
-* Easy for you to add your own procedures do the RPC server (using expose)
+* Build-in support for spawn coins daemons (`bitcoind`, `litecoind`, etc) process and accept RPC calls
+* Easy for you to add your own procedures do the RPC server (using `expose`)
 * No need to worry about `.conf` files for the daemons, everything is passed through command line the best way possible (but you may override arguments)
-* Optimized code reuse with class methods
-* All classes based on `EventEmitter` by default
-* The client part make it easy, along with an RPC server, to setup a farming rig for coins, and also make possible to create a proxy from it
+* Optimized code reuse with class methods and dependency injection
+* All classes based on `EventEmitter` by default (through the `Base` class)
+* The client part make it easy, along with an RPC server, to setup your own farming pool for coins
+* You can create a proxy from it using the `Client` interface, mix up Stratum with your own RPC definition and commands
+* It's up to you to choose the logging module (like `winston`)
 
 # Install
 
@@ -27,12 +30,12 @@ This is not a ready-to-use miner pool, you may use this server to implement your
 npm install stratum
 ```
 
-Notice that you may install this globally using `-g`, `blocknotify` will be available system wide
+Notice that you may install this globally using `-g`, `stratum-notify` will be available system wide
 
-# Block notify (if you want to call it manually for testing purposes)
+# Stratum notify(if you want to call it manually for testing purposes)
 
 ```bash
-node node_modules/.bin/blocknotify --host localhost --port 1337 --password willbebase64encoded --hash abcdef...
+node node_modules/.bin/stratum-notify --host localhost --port 1337 --password willbebase64encoded --type block --data "jsondata"
 ```
 
 This command is called automatically if you set the `coind` options, they are forked when the server is started.
@@ -104,7 +107,7 @@ var server = Server.create({
 
 server.on('mining', function(req, deferred){
     switch (req.method){
-        case 'mining.subscribe':
+        case 'subscribe':
             // req.params[0] -> if filled, it's the User Agent, like CGMiner/CPUMiner sends
             // Just resolve the deferred, the promise will be resolved and the data sent to the connected client
             deferred.resolve([subscription, extranonce1, extranonce2_size]);
@@ -148,9 +151,9 @@ var stratum = require('stratum');
 ```
 
 This module is really modular, you may use just one part of it, without having to touch other classes. For example, you may
-use the `stratum.Client` and the `stratum.rpcserver` without `stratum.daemon` or `stratum.Server`.
+use the `stratum.Client` and the `stratum.RPCServer` without `stratum.Daemon` or `stratum.Server`.
 
-You may, at any time, extend, overload or override any classes methods and instance methods (becauase it uses ES5Class module):
+You may, at any time, extend, overload or override any classes methods and instance methods (because it uses [ES5Class](https://github.com/pocesar/ES5-Class) module):
 
 ```js
 stratum.Server.implement({
@@ -210,6 +213,33 @@ server.listen().then(
 );
 ```
 
+## Base
+
+Available through `stratum.Base`
+
+All the classes inherit from the base class, that inherits from `EventEmitter`, and got 2 methods:
+
+#### freezeProperty(where, obj)
+
+It's a shortcut to make options readonly, useful for sensitive options that must not change. Uses `Object.defineProperty` and `Object.freeze`
+
+```js
+this.opts = {};
+// opts = the current opts member of the class
+// options = the options to be 'set in stone'
+this.freezeProperty('opts', options);
+
+this.opts.change = false; // won't have an effect and throw an error in strict mode
+```
+
+#### debug(msg)
+
+Show debug messages for the class only if `DEBUG=stratum` environment variable is set
+
+```js
+stratum.Base.debug('oops');
+```
+
 ## Server
 
 Available through `stratum.Server`
@@ -255,25 +285,59 @@ server.on('mining.error', function(){
 
 });
 
-
-
 // the stratum.Server also holds defaults for coins daemons
-console.log(server.daemons); // a list of pre-configure daemons in stratum.Server.daemons
+console.log(stratum.Server.daemons); // a list of pre-configured daemons in stratum.Server.daemons
 
-// You can inject them into the server later on, using stratum.daemon
+// You can inject them into the server later on, using stratum.Daemon
 
-server.addDaemon(server.daemons.bitcoin); //instantiates a stratum.daemon and places inside the server
+//instantiates a bitcoin stratum.Daemon and places inside the server
+server.addDaemon(stratum.Server.daemons.bitcoin);
+
+// you can instantiate using your own instance as well
+server.addDaemon(stratum.Daemon.create({
+    'name': 'MyExampleCoin',
+    /*...*/
+}));
 ```
 
-## RPC
+## RPCServer
 
-Available through `stratum.RPCServer`
+Available through `stratum.RPCServer`.
+
+Enables you to communicate from outside the Stratum module through an JSON RPC 2.0 interface. It's optional, and you don't need to enable it, you may communicate from inside out only.
+
+It's mainly useful to receive notifications, like the `stratum-notify` bin to receive a new block hash, but you may extend the interface to accept any other commands that you deem necessary for your app.
+
+It's advised to bind the `RPCServer` instance to either `localhost` or an internal IP range, and/or access through trusted proxies.
+
+**NOTICE: Once you create an RPCServer, for security reasons, the options can't be changed, by default. If you want to disable this, pass in `{lock: false}` to the `create`**
+
+```js
+var rpc = stratum.RPCServer.create({
+          'lock': true,
+          'mode': 'tcp', // can be 'tcp', 'http', 'both' (can handle TCP and HTTP/Websockets on one port)
+          'port': 9999,
+          'host': 'localhost', // bind to localhost
+          'password': 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3' // SHA256 hash of the password, no plain text!
+        });
+
+rpc.listen(); // listens on port 9999, binding to localhost
+
+rpc.expose('mymethod', function(args, connection, callback){
+    // if you want to pass an error, use the first callback parameter
+    callback(error);
+    // otherwise, pass the result through the second parameter
+    callback(null, result);
+});
+
+// RPC calls like {"method":"mymethod","params":[1,"2"],"id":1}, the args parameter will receive only the [1,"2"]
+```
 
 ## Client
 
 Available through `stratum.Client`
 
-The client can connect to a stratum server and send and receive commands like if it were a miner.
+The client can connect to a stratum server and send and receive commands like if it was a miner.
 
 The main reason for this part of the module is that you can setup a stratum proxy using it, to forward raw data (or even a command line call) to a stratum server.
 
@@ -289,18 +353,82 @@ client.on('mining', function(req, deferred){
     // this
 });
 
-client.connect(8080, 'localhost');
+client.connect(8080, 'localhost').then(function(socket){
+    socket.stratumSubscribe('NodeMiner');
+    socket.stratumAuthorize('user','pass');
+    socket.stratumSubmit('worker', 'job_id', 'extranonce2', 'ntime', 'nonce');
+    socket.stratumSend(data, true); //send a stratum command other than the previous ones
+    socket.send(data); // send raw data through the socket
+});
 ```
-
-
 
 ## Daemon
 
 Available through `stratum.Daemon`
 
+Include or change the global configuration for daemons using the `stratum.Server.daemons` member. It's not set per instance, but rather globally.
+
+The options `path`, `args`, `notifyPath`, `notify` are optional
+
+```js
+stratum.Server.daemons['sillycoin'] = {
+    'path': '/usr/bin/sillycoind', // optional
+    'args': ['debug'], // optional
+    'notifyPath': './node_modules/.bin/stratum-notify', // optional
+    'notify': ['block', 'wallet', 'alert'], // optional, will build walletnotify, blocknotify and alertnotify parameters
+    'name': 'SillyCoin',
+    'user': 'rpcuser',
+    'password': 'rpcpassword',
+    'port': 0xDEAD,
+    'host': 'localhost'
+};
+```
+
+You can start issuing commands to the daemon BEFORE calling `start()`, usually when you already have it running. `start()` will attempt to spawn the process.
+
+```js
+var daemon = stratum.Daemon.create({
+        'path': '/usr/bin/sillycoind',
+        'name': 'SillyCoin',
+        'user': 'rpcuser',
+        'password': 'rpcpassword',
+        'port': 0xDEAD,
+        'host': 'localhost',
+        'args': ['debug']
+    });
+
+daemon.start();
+
+daemon.call('getinfo', []).then(
+    // daemon returned a result
+    function(result){
+        console.log(result.balance);
+    },
+    // daemon returned an error
+    function(result){
+        console.log(result); // usually "Command timed out" or "Unauthorized access"
+    }
+);
+```
+
+## Utils
+
+Node-Stratum comes with a few already used common util libraries, that can be accessed through `stratum.*`, that are:
+
+* Lo-dash through `stratum.lodash`
+* Filesystem through `stratum.fs`
+* through `stratum.net`
+* UUID through `stratum.uuid`
+* Q promises through `stratum.q`
+* JSON RPC 2.0 through `stratum.rpc`
+
+Use at will.
+
 # Debugging
 
-Export/set the environment variable `DEBUG=stratum` on your command line
+Export/set the environment variable `DEBUG=stratum` on your command line before executing your code, that you'll be able to see everything behind the hood inside this module on the command line.
+
+You can additionally set `DEBUG=stratum,jsonrpc` to also see the RPC part in-depth (for `stratum.Daemon` and `stratum.RPCServer`)
 
 # Do you like it? Wanna support the development?
 

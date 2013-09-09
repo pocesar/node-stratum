@@ -1,6 +1,6 @@
-var stratum = require('../lib');
-
-var server = stratum.Server.create();
+var stratum = require('../lib'),
+    Server = stratum.Server,
+    server = Server.create();
 
 server.on('mining', function(req, deferred, socket){
   // req is {method:"", id:0, params: []}
@@ -22,7 +22,7 @@ server.on('mining', function(req, deferred, socket){
   // etc
 
   switch (req.method) {
-    case 'mining.subscribe':
+    case 'subscribe':
       console.log('Client is asking for subscription!');
       // returns a mining.notify command to the client
       //
@@ -34,7 +34,7 @@ server.on('mining', function(req, deferred, socket){
       // you may send an error to the client by rejecting the deferred
       // deferred.reject(stratum.server.errors.UNKNOWN);
       break;
-    case 'mining.authorize':
+    case 'authorize':
       console.log('Authorizing worker ' + req.params[0]);
 
       // true = authorized or false = not authorized
@@ -86,12 +86,12 @@ server.on('mining', function(req, deferred, socket){
 
 
       break;
-    case 'mining.submit':
+    case 'submit':
       deferred.resolve([true]); // accept any share, just for example purposes
       break;
-    case 'mining.get_transactions':
+    case 'get_transactions':
       // transparency to the masses (BFGMiner asks for this), you can return an error using reject
-      deferred.reject(stratum.server.errors.METHOD_NOT_FOUND);
+      deferred.reject(Server.errors.METHOD_NOT_FOUND);
       break;
     default:
       // reject is the Deferred reject function, sends an error to the socket
@@ -100,7 +100,7 @@ server.on('mining', function(req, deferred, socket){
       // is valid before emitting the 'mining' event.
 
       // This error will go directly to mining.error
-      deferred.reject(stratum.server.errors.METHOD_NOT_FOUND);
+      deferred.reject(Server.errors.METHOD_NOT_FOUND);
   }
 });
 

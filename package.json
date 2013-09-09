@@ -10,7 +10,7 @@
     "node": ">= 0.8.0"
   },
   "bin": {
-    "blocknotify": "./bin/blocknotify"
+    "stratum-notify": "./bin/stratum-notify"
   },
   "main": "./lib",
   "directories": {
@@ -48,7 +48,8 @@
     "mocha": "*",
     "jshint": "*",
     "expect.js": "*",
-    "sinon": "~1.7.3"
+    "sinon": "~1.7.3",
+    "benchmark": "~1.0.0"
   },
   "scripts": {
     "test": "jshint lib test && mocha test/tests.js"
