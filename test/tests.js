@@ -20,11 +20,6 @@ function promisesArray(defers){
 module.exports = {
   Stratum: {
     Base        : {
-      testInheritance: function (){
-        var base = new stratum.Base();
-
-        expect(base._events).to.be.ok();
-      },
       testEvent      : function (done){
         var base = stratum.Base.create();
 
