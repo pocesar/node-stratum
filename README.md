@@ -217,20 +217,7 @@ server.listen().then(
 
 Available through `stratum.Base`
 
-All the classes inherit from the base class, that inherits from `EventEmitter`, and got 2 methods:
-
-#### freezeProperty(where, obj)
-
-It's a shortcut to make options readonly, useful for sensitive options that must not change. Uses `Object.defineProperty` and `Object.freeze`
-
-```js
-this.opts = {};
-// opts = the current opts member of the class
-// options = the options to be 'set in stone'
-this.freezeProperty('opts', options);
-
-this.opts.change = false; // won't have an effect and throw an error in strict mode
-```
+All the classes inherit from the base class, that inherits from `EventEmitter`, and got an additional method:
 
 #### debug(msg)
 
@@ -310,11 +297,8 @@ It's mainly useful to receive notifications (wallet, block and alert), like the 
 
 It's advised to bind the `RPCServer` instance to either `localhost` or an internal IP range, and/or access through trusted proxies.
 
-**NOTICE: Once you create an RPCServer, for security reasons, the options can't be changed, by default. If you want to disable this, pass in `{lock: false}` to the `create`**
-
 ```js
 var rpc = stratum.RPCServer.create({
-          'lock': true,
           'mode': 'tcp', // can be 'tcp', 'http', 'both' (can handle TCP and HTTP/Websockets on one port)
           'port': 9999,
           'host': 'localhost', // bind to localhost

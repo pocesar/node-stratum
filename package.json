@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "repository": {
     "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
@@ -39,17 +39,16 @@
     "colors": "*",
     "json-rpc2": "*",
     "debug": "*",
-    "toobusy": "~0.2.3",
+    "toobusy": "*",
     "lodash": "*",
-    "q": "~0.9.6",
-    "uuid": "~1.4.1"
+    "q": "~0.9.x",
+    "uuid": "~1.4.x"
   },
   "devDependencies": {
     "mocha": "*",
     "jshint": "*",
     "expect.js": "*",
-    "sinon": "~1.7.3",
-    "benchmark": "~1.0.0"
+    "sinon": "*"
   },
   "scripts": {
     "test": "jshint lib test && mocha test/tests.js"
