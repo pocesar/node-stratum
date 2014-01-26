@@ -55,7 +55,7 @@ program
   .option('--source <name>', 'The daemon source')
   .parse(process.argv);
 
-if (!program.host || !program.port || !program.password || !program.json || !program.source || !program.type) {
+if (!program.host || !program.port || !program.password || !program.data || !program.source || !program.type) {
   console.log('All options must be set'.yellow);
   program.help();
 } else {
@@ -67,7 +67,7 @@ if (!program.host || !program.port || !program.password || !program.json || !pro
   var socket = client.connectSocket(function (err, conn){
     socket.removeAllListeners('end');
 
-    conn.call('mining.' + program.type, [program.password, program.json, program.source], function (err, result){
+    conn.call('mining.' + program.type, [program.password, program.data, program.source], function (err, result){
       if (err) {
         throw err;
       } else {

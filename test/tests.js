@@ -57,7 +57,7 @@ module.exports = {
           server = stratum.Server.create(),
           defers = [
             stratum.q.defer(),
-            stratum.q.defer(),
+            stratum.q.defer()
           ],
           cmd = '{"method":"mining.subscribe","params":[],"id":1}\n{"method":"mining.authorize","params":[],"id":1}\n',
           cmds = stratum.Server.getStratumCommands(cmd);
@@ -347,7 +347,7 @@ module.exports = {
 
         expect(function (){
           stratum.Daemon.create({path: '//', port: 8080});
-        }).to.throwError(/Daemon must have options user, password, port, host, name set, there are no defaults/);
+        }).to.throwError(/Daemon must have options "user, password, port, host, name" set, there are no defaults/);
 
         expect(function (){
           stratum.Daemon.create({

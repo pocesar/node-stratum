@@ -1,6 +1,7 @@
 {
   "name": "stratum",
-  "version": "0.0.6",
+  "version": "0.0.7",
+  "preferGlobal": true,
   "repository": {
     "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
@@ -41,8 +42,9 @@
     "debug": "*",
     "toobusy": "*",
     "lodash": "*",
-    "q": "~0.9.x",
-    "uuid": "~1.4.x"
+    "q": "*",
+    "uuid": "*",
+    "eventemitter3": "*"
   },
   "devDependencies": {
     "mocha": "*",

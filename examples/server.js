@@ -7,7 +7,7 @@ server.on('mining', function(req, deferred, socket){
 
   // this may seem counter intuitive to some people
   // but working with deferred is the most powerful
-  // way to create maintainable code (tied with decoupling
+  // way to create maintainable code (along with decoupling
   // using events)
 
   // The deferred parameter must be resolve'd if the data
@@ -28,11 +28,13 @@ server.on('mining', function(req, deferred, socket){
       //
       // Resolve the deferred, so the command is sent to the socket
 
-      deferred  // subscription_id, extranonce1, extranonce2_size
-        .resolve(['ae6812eb4cd7735a302a8a9dd95cf71f', '08000002', 4]);
+      deferred // difficulty, subscription_id, extranonce1, extranonce2_size
+        .resolve(['b4b6693b72a50c7116db18d6497cac52','ae6812eb4cd7735a302a8a9dd95cf71f', '08000002', 4]);
+
+      // the resulting command will be [[["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"], ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]], "08000002", 4]
 
       // you may send an error to the client by rejecting the deferred
-      // deferred.reject(stratum.server.errors.UNKNOWN);
+      // deferred.reject(Server.errors.UNKNOWN);
       break;
     case 'authorize':
       console.log('Authorizing worker ' + req.params[0]);
@@ -44,10 +46,30 @@ server.on('mining', function(req, deferred, socket){
 
       // notice that these two functions (set_difficulty and notify)
       // are called before the deferred, make sure a racing condition won't happen
-      socket.set_difficulty([1]).then(function(){
-        console.log('Sent difficulty');
-      }, function(){
-        console.log('Failed to send difficulty');
+      deferred.promise.then(function(){
+        socket.set_difficulty(['b4b6693b72a50c7116db18d6497cac52']).then(function(){
+          console.log('Sent difficulty');
+        }, function(){
+          console.log('Failed to send difficulty');
+        });
+
+        //SCRYPT
+        socket.notify([
+          'bf',      // job_id
+          'b61b385ce17b7f9e4d1586ee0cfa7bc0778fe63bffe0240bd9d228f2829b7f0b', // previous_hash
+          '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff2303700706062f503253482f042a91f15108', // coinbase1
+          '092f7374726174756d2f00000000018091db2a010000001976a914e63c288f379eea1a32305932d957d70b69e21dff88ac00000000',         // coinbase2
+          ['4d31368c61b556105d936a0bf2f7d772e19375d2997fbf8d9eae5c5e089b2910', '012b5c89cff28de2400d192a3d8ed55b5d19f026f77d95838b3af2aefd0304a4'], // branches
+          '00000001', // block_version
+          '1b494a04', // nbit
+          '51f1912a', // ntime
+          true        // clean
+
+        ]).then(function(){
+          console.log('Sent work');
+        }, function(){
+          console.log('Failed to send work');
+        });
       });
 
       // job_id, previous_hash, coinbase1, coinbase2, branches, block_version, nbit, ntime, clean
@@ -70,24 +92,14 @@ server.on('mining', function(req, deferred, socket){
         console.log('Failed to send work');
       });*/
 
-      //SCRYPT
-      socket.notify([
-        'bf',
-        'b61b385ce17b7f9e4d1586ee0cfa7bc0778fe63bffe0240bd9d228f2829b7f0b',
-        '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff2303700706062f503253482f042a91f15108',
-        '092f7374726174756d2f00000000018091db2a010000001976a914e63c288f379eea1a32305932d957d70b69e21dff88ac00000000',
-        ['4d31368c61b556105d936a0bf2f7d772e19375d2997fbf8d9eae5c5e089b2910', '012b5c89cff28de2400d192a3d8ed55b5d19f026f77d95838b3af2aefd0304a4'],
-        '00000001', '1b494a04', '51f1912a', true
-      ]).then(function(){
-          console.log('Sent work');
-        }, function(){
-          console.log('Failed to send work');
-        });
-
-
       break;
     case 'submit':
-      deferred.resolve([true]); // accept any share, just for example purposes
+      // randomly accept or rejects shares, just for example purposes
+      if (Math.random() * 10 + 1 < 3.141516) {
+        deferred.resolve([false]);
+      } else {
+        deferred.resolve([true]);
+      }
       break;
     case 'get_transactions':
       // transparency to the masses (BFGMiner asks for this), you can return an error using reject
@@ -106,13 +118,20 @@ server.on('mining', function(req, deferred, socket){
 
 // This event is emitted when an error directly related to mining is raised
 server.on('mining.error', function(error, socket){
-  console.log('Mining error: ' + error);
+  console.log('Mining error: ', error);
 });
 
 // Server emits rpc events when it receives communication from outside (usually from blocknotify)
+// for this test, use on the command line:
+
+// node ./bin/stratum-notify --host localhost --port 1337 --password password --type wallet --source bitcoin --data "DATA"
 server.on('rpc', function(name, args, connection, deferred){
   // these two come out of the box, but you may add your own functions as well
   // using server.rpc.expose('name', function(){}, context);
+
+  console.log(name, args);
+  // args is ['hash','daemonname']
+
   switch (name) {
     case 'mining.connections':
       // "someone" is asking for the connections on this app, let's return the ids
@@ -126,12 +145,22 @@ server.on('rpc', function(name, args, connection, deferred){
       deferred.reject(['Im not showing it to you']);
 
       break;
-    case 'mining.update_block':
+    case 'mining.wallet':
+      // walletnotify
+      deferred.resolve(['uhum']);
+      break;
+    case 'mining.alert':
+      // alertnotify
+      deferred.resolve(['gotcha']);
+      break;
+    case 'mining.block':
       // bitcoind is sending us a new block, there's no need to answer with
       // real data, unless the other end if doing some log
 
       deferred.resolve(['Block updated']); // always resolve using array
       break;
+    default:
+      deferred.reject(['invalid command']);
   }
 });
 
