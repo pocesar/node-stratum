@@ -8,7 +8,7 @@
   },
   "license": "GPLv2",
   "engines": {
-    "node": ">= 0.8.0"
+    "node": "0.10.x"
   },
   "bin": {
     "stratum-notify": "./bin/stratum-notify"
