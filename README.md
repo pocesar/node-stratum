@@ -1,6 +1,6 @@
 _WORK IN PROGRESS_
 
-[![Build Status](https://travis-ci.org/pocesar/node-stratum.png?branch=master)](https://travis-ci.org/pocesar/node-stratum)
+[![Build Status](https://travis-ci.org/pocesar/node-stratum.png?branch=master)](https://travis-ci.org/pocesar/node-stratum) [![Coverage Status](https://coveralls.io/repos/pocesar/node-stratum/badge.png)](https://coveralls.io/r/pocesar/node-stratum)
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
