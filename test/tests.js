@@ -5,8 +5,7 @@ var
   stratum = require('../lib'),
   sinon = require('sinon'),
   _ = stratum.lodash,
-  EventEmitter = require('events').EventEmitter,
-  em,
+  EventEmitter = stratum.Base,
   child_process;
 
 function promisesArray(defers){
@@ -100,7 +99,7 @@ module.exports = {
           stratum.Server.getStratumCommands('{"jsonrpc":"2.0","params":[],"id":0}').cmds
         );
 
-        stratum.q.allSettled(promisesArray(defers)).then(function (){
+        stratum.q.allSettled(promisesArray(defers)).done(function (){
           server.removeAllListeners();
           done();
         });
@@ -144,7 +143,7 @@ module.exports = {
 
         server.handleData(client, cmd); // Stratum
 
-        stratum.q.allSettled(promisesArray(defers)).then(function (){
+        stratum.q.allSettled(promisesArray(defers)).done(function (){
           stratum.Server.processCommands.restore();
           done();
         });
@@ -259,6 +258,35 @@ module.exports = {
         expect(Context.exposed.calledWith([1], {}, cb)).to.equal(true);
         expect(cb.called).to.equal(false);
       },
+      testNoContext : function(){
+        var
+          rpc = stratum.RPCServer.create(this.opts),
+          cb = sinon.spy();
+
+        rpc.$import({
+          testing: function(){
+            return true;
+          }
+        });
+
+        sinon.spy(rpc, 'testing');
+
+        var exposed = rpc._authenticate('test', rpc.testing);
+
+        exposed(['MTIz','1',2], {}, cb);
+        expect(cb.called).to.be(false);
+        expect(rpc.testing.called).to.be(true);
+        expect(rpc.testing.calledWith(['1',2], {}, cb)).to.be(true);
+      },
+      testAlreadyListening: function(){
+        var server = stratum.RPCServer.create(this.opts);
+
+        server._server = true;
+
+        expect(function(){
+          server.listen();
+        }).to.throwException(/Server already listening on port 9999/);
+      },
       testTcpRPCCommand           : function (done){
         var server = stratum.RPCServer.create(this.opts),
           exposed = {
@@ -328,17 +356,13 @@ module.exports = {
     },
     Daemon      : {
       before                : function (){
-        em = new EventEmitter();
+        child_process = function(){
+          var em = new EventEmitter();
 
-        child_process = sinon.stub({
-          kill: function (){},
-          on  : function (name, cb){
-            em.on(name, cb);
-          },
-          emit: function (){
-            em.emit.call(child_process, Array.prototype.slice.call(arguments));
-          }
-        });
+          em.kill = sinon.spy();
+
+          return em;
+        };
       },
       testCreationExceptions: function (){
         expect(function (){
@@ -389,6 +413,18 @@ module.exports = {
           { blocknotify: '"stratum-notify --source Bitcoin --password rpcpassword --host localhost --port 8888 --type block --data %s"' }
         ]);
       },
+      testArgsCreation: function(){
+        var daemon = new stratum.Daemon({
+          'port'     : 8080,
+          'host'     : 'localhost',
+          'user'     : 'rpcuser',
+          'password' : 'bitcoindpassword',
+          'name'     : 'Bitcoin',
+          'args'     : 'invalid args, must be array'
+        });
+
+        expect(daemon.opts.args).to.eql([]);
+      },
       testArguments         : function (){
         var obj = {
           'port'    : 8080,
@@ -400,7 +436,10 @@ module.exports = {
             {'blockminsize': 1000},
             {'blockmaxsize': 250000},
             'testnet',
-            'upnp'
+            'upnp',
+            '-argstartingwithdash',
+            1,
+            {'-objargwithdash': true}
           ]
         };
 
@@ -408,7 +447,9 @@ module.exports = {
           '-blockminsize=1000',
           '-blockmaxsize=250000',
           '-testnet',
-          '-upnp'
+          '-upnp',
+          '-argstartingwithdash',
+          '-objargwithdash=true'
         ]);
       },
       testArgumentsAndNotify: function (){
@@ -446,6 +487,8 @@ module.exports = {
         ]);
       },
       testClose             : function (done){
+        var clock = sinon.useFakeTimers();
+
         var daemon = stratum.Daemon.create({
           path    : '/doesnt/exist/%s',
           port    : 8080,
@@ -456,32 +499,168 @@ module.exports = {
         });
 
         sinon.stub(daemon, '_pathExists', function (){ return true; });
-        sinon.stub(daemon, '_timeout', function (fn){ return setTimeout(fn, 0); });
+
+        sinon.stub(daemon.rpc, 'call', function(name, params, callback){
+          if (daemon.callerror === true) {
+            callback('error');
+          } else {
+            callback(null, 'success');
+          }
+        });
 
         expect(daemon._pathExists).to.not.throwException();
 
-        daemon.close().then(function (){
-
-        }, function (message){
+        daemon.close().fail(function (message){
           expect(message).to.be('Process wasnt started');
-        });
+        }).done();
 
-        daemon.process = child_process;
+        var child = child_process();
+
+        daemon.process = child;
 
         expect(daemon.start()).to.be(false);
 
-        daemon.close().then(function (){
-        }, function (message){
+        var promise = daemon.close();
+
+        clock.tick(5000); // make the timeout be met
+
+        promise.fail(function (message){
           expect(message).to.be('Process didnt respond and was killed');
-          expect(daemon.process.kill.called).to.be(true);
+          daemon.process = child;
+          expect(child.kill.called).to.be(true);
+          child.kill.reset();
+
+        }).done(function(){
+          promise = daemon.close(1);
+          clock.tick(1000);
+
+          promise.fail(function(message){
+            expect(message).to.be('Process didnt respond and was killed');
+            expect(child.kill.called).to.be(true);
+            daemon.process = child;
+            child.kill.reset();
+
+          }).done(function(){
+            daemon.close().done(function(){
+              expect(daemon.process).to.be(null);
+              daemon.callerror = true;
+              daemon.process = child;
+
+              daemon.close().fail(function(message){
+                expect(message).to.be('error');
+              }).done(function(){
+                clock.restore();
+                done();
+              });
+            });
+          });
+        });
+      },
+      testFailedRPCCall: function(done){
+        var clock = sinon.useFakeTimers();
+
+        var daemon = stratum.Daemon.create({
+          path    : '/doesnt/exist/%s',
+          port    : 8080,
+          host    : 'localhost',
+          user    : 'user',
+          password: 'pass',
+          name    : 'Mycoin'
+        });
+
+        sinon.stub(daemon.rpc, 'call', function(name, params, callback){
+          if (name === 'test') {
+            callback('error');
+          }
+        });
+
+        daemon.call('test').fail(function(message){
+          expect(message).to.equal('error');
+        }).done(function(){
+          var promise = daemon.call('timeout');
+          clock.tick(4000);
+
+          promise.fail(function(message){
+            expect(message).to.be('Command timed out');
+          }).done(function(){
+            clock.restore();
+            done();
+          });
+        });
+
+      },
+      testRPCServerArgs: function(){
+        sinon.spy(stratum.Daemon, 'notify');
+
+        var opts = {
+            path    : '/doesnt/exist/%s',
+            port    : 8080,
+            host    : 'localhost',
+            user    : 'user',
+            password: 'pass',
+            'rpcserver': {
+              'port'      : 8888,
+              'host'      : 'localhost',
+              'password'  : 'rpcpassword',
+              'notify'    : ['wallet', 'alert', 'block']
+            },
+            name    : 'Mycoin'
+          },
+          daemon = stratum.Daemon.create(opts);
+
+        expect(stratum.Daemon.notify.called).to.be(true);
+        expect(daemon.opts.rpcserver.notifyPath).to.equal(stratum.path.join('..','bin','stratum-notify'));
+
+        stratum.Daemon.notify.reset();
+        delete opts.rpcserver.notify;
+
+        daemon = stratum.Daemon.create(opts);
+        expect(stratum.Daemon.notify.called).to.be(false);
+        expect(daemon.opts.rpcserver.notify).to.eql([]);
+
+        stratum.Daemon.notify.restore();
+      },
+      testProcessSpawning: function(done){
+        var invalid = 1, daemon = stratum.Daemon.create({
+            path    : '/doesnt/exist/%s',
+            port    : 8080,
+            host    : 'localhost',
+            user    : 'user',
+            password: 'pass',
+            name    : 'Mycoin',
+            args    : [
+              'one',
+              'two',
+              invalid
+            ]
+          });
+
+        var child = child_process();
+
+        sinon.stub(daemon, '_pathExists', function (){ return true; });
+        sinon.stub(daemon, 'spawn', function(){ return child; });
+
+        expect(daemon.start()).to.be(true);
+        expect(daemon.spawn.calledWith('/doesnt/exist/%s', [ '-one', '-two' ])).to.be(true);
+        expect(daemon.process).to.be(child);
+
+        daemon.process.on('close', function(){
+          expect(daemon.process).to.equal(null);
+
+          daemon.spawn.restore();
+
+          sinon.stub(daemon, 'spawn', function(){ throw new Error('failed to create process'); });
+
+          expect(daemon.start()).to.be(false);
           done();
         });
+
+        daemon.process.emit('close');
       },
       testCommunication     : function (done){
         var
-          http = stratum.rpc.Server.create(),
           daemon = stratum.Daemon.create({
-            port    : 39881,
+            port    : 59881,
             host    : 'localhost',
             user    : 'user',
             password: 'pass',
@@ -489,23 +668,21 @@ module.exports = {
           })
           ;
 
-        http.expose('getdifficulty', function (args, opts, callback){
-          expect(args).to.eql([
+        sinon.stub(daemon.rpc, 'call', function (args, opts, callback){
+          expect(opts).to.eql([
             {dummy: true}
           ]);
           callback(null, 1);
         });
 
-        http.enableAuth('user', 'pass');
-
-        http.listen(39881, 'localhost');
-
         daemon.call('getdifficulty', [
             {dummy: true}
-          ]).then(function (res){
+        ]).done(function (res){
           expect(res).to.equal(1);
-          done();
-          http.close();
+          daemon.call('getdifficulty', {dummy: true}).then(function(res){
+            expect(res).to.equal(1);
+            done();
+          }).done();
         });
       }
     }

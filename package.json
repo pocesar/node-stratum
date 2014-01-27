@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -27,6 +27,9 @@
     "altcoin",
     "json-rpc",
     "json-rpc2",
+    "jsonrpc2",
+    "jsonrpc",
+    "cryptocoin",
     "rpc",
     "daemon",
     "server",
@@ -40,7 +43,7 @@
     "colors": "*",
     "json-rpc2": "*",
     "debug": "*",
-    "toobusy": "*",
+    "toobusy-js": "*",
     "lodash": "*",
     "q": "*",
     "uuid": "*",
@@ -50,9 +53,11 @@
     "mocha": "*",
     "jshint": "*",
     "expect.js": "*",
-    "sinon": "*"
+    "sinon": "*",
+    "istanbul": "*"
   },
   "scripts": {
-    "test": "jshint lib test && mocha test/tests.js"
+    "test": "jshint lib test && mocha test/tests.js",
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000 test/tests.js"
   }
 }
