@@ -54,10 +54,13 @@
     "jshint": "*",
     "expect.js": "*",
     "sinon": "*",
-    "istanbul": "*"
+    "istanbul": "*",
+    "coveralls": "*",
+    "mocha-lcov-reporter": "*"
   },
   "scripts": {
     "test": "jshint lib test && mocha test/tests.js",
-    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000 test/tests.js"
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000 test/tests.js",
+    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly -t 5000 test/tests.js && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
   }
 }
