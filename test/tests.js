@@ -376,6 +376,7 @@ module.exports = {
         expect(function (){
           stratum.Daemon.create({
             path    : '/doesnt/exist/%s',
+            datadir : 'data/dir',
             port    : 8080,
             host    : 'localhost',
             user    : 'user',
@@ -384,12 +385,24 @@ module.exports = {
           }).start();
         }).to.throwError(/Provided daemon "\/doesnt\/exist\/%s" path doesnt exist/);
 
+        expect(function (){
+          stratum.Daemon.create({
+            path    : '/doesnt/exist/%s',
+            port    : 8080,
+            host    : 'localhost',
+            user    : 'user',
+            password: 'pass',
+            name    : 'Mycoin'
+          }).start();
+        }).to.throwError(/The option "datadir" must be set to the place your wallet.dat is set./);
+
       },
       testNotify            : function (){
         var obj = {
           'port'     : 8080,
           'host'     : 'localhost',
           'user'     : 'rpcuser',
+          'datadir'  : 'data/dir',
           'password' : 'bitcoindpassword',
           'name'     : 'Bitcoin',
           'rpcserver': {
@@ -416,6 +429,7 @@ module.exports = {
       testArgsCreation: function(){
         var daemon = new stratum.Daemon({
           'port'     : 8080,
+          'datadir'  : 'data/dir',
           'host'     : 'localhost',
           'user'     : 'rpcuser',
           'password' : 'bitcoindpassword',
@@ -430,6 +444,7 @@ module.exports = {
           'port'    : 8080,
           'host'    : 'localhost',
           'user'    : 'rpcuser',
+          'datadir' : 'data/dir',
           'password': 'rpcpassword',
           'name'    : 'Bitcoin',
           'args'    : [
@@ -457,6 +472,7 @@ module.exports = {
           'port'     : 8080,
           'host'     : 'localhost',
           'user'     : 'rpcuser',
+          'datadir' : 'data/dir',
           'password' : 'rpcpassword',
           'name'     : 'Bitcoin',
           'rpcserver': {
@@ -493,6 +509,7 @@ module.exports = {
           path    : '/doesnt/exist/%s',
           port    : 8080,
           host    : 'localhost',
+          datadir : 'data/dir',
           user    : 'user',
           password: 'pass',
           name    : 'Mycoin'
@@ -561,6 +578,7 @@ module.exports = {
 
         var daemon = stratum.Daemon.create({
           path    : '/doesnt/exist/%s',
+          datadir : 'data/dir',
           port    : 8080,
           host    : 'localhost',
           user    : 'user',
@@ -597,6 +615,7 @@ module.exports = {
             port    : 8080,
             host    : 'localhost',
             user    : 'user',
+            datadir : 'data/dir',
             password: 'pass',
             'rpcserver': {
               'port'      : 8888,
@@ -624,6 +643,7 @@ module.exports = {
         var invalid = 1, daemon = stratum.Daemon.create({
             path    : '/doesnt/exist/%s',
             port    : 8080,
+            datadir : 'data/dir',
             host    : 'localhost',
             user    : 'user',
             password: 'pass',
@@ -641,7 +661,18 @@ module.exports = {
         sinon.stub(daemon, 'spawn', function(){ return child; });
 
         expect(daemon.start()).to.be(true);
-        expect(daemon.spawn.calledWith('/doesnt/exist/%s', [ '-one', '-two' ])).to.be(true);
+
+        expect(daemon.spawn.calledWith(
+          '/doesnt/exist/%s',
+          [ '-one',
+            '-two',
+            '-daemon',
+            '-rpcuser=user',
+            '-rpcpassword=pass',
+            '-rpcport=8080',
+            '-datadir=data/dir' ]
+        )).to.be(true);
+
         expect(daemon.process).to.be(child);
 
         daemon.process.on('close', function(){
@@ -662,6 +693,7 @@ module.exports = {
           daemon = stratum.Daemon.create({
             port    : 59881,
             host    : 'localhost',
+            datadir : 'data/dir',
             user    : 'user',
             password: 'pass',
             name    : 'Communicoin'
