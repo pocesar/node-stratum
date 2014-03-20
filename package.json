@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -40,14 +40,15 @@
   "dependencies": {
     "es5class": "*",
     "commander": "*",
-    "colors": "*",
+    "chalk": "*",
     "json-rpc2": "*",
     "debug": "*",
     "toobusy-js": "*",
     "lodash": "*",
-    "q": "*",
+    "bluebird": "*",
     "uuid": "*",
-    "eventemitter3": "*"
+    "eventemitter3": "*",
+    "better-curry": "*"
   },
   "devDependencies": {
     "mocha": "*",
@@ -59,8 +60,8 @@
     "mocha-lcov-reporter": "*"
   },
   "scripts": {
-    "test": "jshint lib test && mocha test/tests.js",
-    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000 test/tests.js",
-    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly -t 5000 test/tests.js && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
+    "test": "jshint lib test && mocha",
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000",
+    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly -t 5000 && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
   }
 }

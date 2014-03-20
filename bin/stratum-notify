@@ -1,8 +1,7 @@
 'use strict';
 
-require('colors');
-
 var
+  chalk = require('chalk'),
   program = require('commander'),
   rpc = require('json-rpc2');
 
@@ -19,7 +18,7 @@ function blockLen(value){
   value = value.toString();
 
   if (/[^a-f0-9]/i.test(value) || value.length < 64) {
-    console.log('Invalid block hash supplied'.red);
+    console.log(chalk.red('Invalid block hash supplied'));
     return '';
   }
 
@@ -56,7 +55,7 @@ program
   .parse(process.argv);
 
 if (!program.host || !program.port || !program.password || !program.data || !program.source || !program.type) {
-  console.log('All options must be set'.yellow);
+  console.log(chalk.yellow('All options must be set'));
   program.help();
 } else {
   var client = rpc.Client.create(
@@ -79,10 +78,10 @@ if (!program.host || !program.port || !program.password || !program.data || !pro
   });
 
   socket.on('end', function(){
-    console.log('Connection closed'.grey);
+    console.log(chalk.grey('Connection closed'));
   });
 
   socket.on('error', function(){
-    console.log('Failed to connect to host'.grey);
+    console.log(chalk.grey('Failed to connect to host'));
   });
 }

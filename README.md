@@ -1,17 +1,14 @@
-_WORK IN PROGRESS_
-
 [![Build Status](https://travis-ci.org/pocesar/node-stratum.png?branch=master)](https://travis-ci.org/pocesar/node-stratum) [![Coverage Status](https://coveralls.io/repos/pocesar/node-stratum/badge.png)](https://coveralls.io/r/pocesar/node-stratum)
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
-Node.js Stratum
-============
+# Node.js Stratum Server / Client / RPC Daemon
 
 Exposes a server to enable Stratum mining protocol (server and client) usage on Node.js and subscribe for events using EventEmitter, and accept `stratum-notify` from `*coind` daemons
 
 This is not a ready-to-use miner pool, you may use this server to implement your favorite altcoins, all the pool logic is up to you (shares, passwords, sessions, etc).
 
-# Highlights
+## Highlights
 
 * Defer and promise based code instead of callbacks (avoid callback hell)
 * Simple but powerful API for managing both server and client
@@ -24,7 +21,7 @@ This is not a ready-to-use miner pool, you may use this server to implement your
 * You can create a proxy from it using the `Client` interface, mix up Stratum with your own RPC definition and commands
 * It's up to you to choose the logging module (like `winston`)
 
-# Install
+## Install
 
 ```bash
 npm install stratum
@@ -32,7 +29,9 @@ npm install stratum
 
 Notice that you may install this globally using `-g`, `stratum-notify` will be available system wide
 
-# Stratum notify(if you want to call it manually for testing purposes)
+## Stratum notify
+
+##### if you want to call it manually for testing purposes
 
 ```bash
 node node_modules/.bin/stratum-notify --host localhost --port 1337 --password willbebase64encoded --type block --data "jsondata"
@@ -40,7 +39,7 @@ node node_modules/.bin/stratum-notify --host localhost --port 1337 --password wi
 
 This command is called automatically if you set the `coind` options, they are forked when the server is started.
 
-# Usage
+## Usage
 
 ```js
 var Server = require('stratum').Server;
@@ -138,11 +137,11 @@ client.connect({
 
 ```
 
-# Examples
+## Examples
 
 Check the `examples` folder, each part (client and server) is completely explained, and how to proceed on each possible case.
 
-# Documentation
+## Documentation
 
 The following documentation expects that:
 
@@ -213,11 +212,11 @@ server.listen().then(
 );
 ```
 
-## Base
+### Base
 
 Available through `stratum.Base`
 
-All the classes inherit from the base class, that inherits from `EventEmitter`, and got an additional method:
+All the classes inherit from the base class, that inherits from `EventEmitter3`, and got an additional method:
 
 #### debug(msg)
 
@@ -227,7 +226,7 @@ Show debug messages for the class only if `DEBUG=stratum` environment variable i
 stratum.Base.debug('oops');
 ```
 
-## Server
+### Server
 
 Available through `stratum.Server`
 
@@ -287,7 +286,7 @@ server.addDaemon(stratum.Daemon.create({
 }));
 ```
 
-## RPCServer
+### RPCServer
 
 Available through `stratum.RPCServer`.
 
@@ -317,7 +316,7 @@ rpc.expose('mymethod', function(args, connection, callback){
 // RPC calls like {"method":"mymethod","params":[1,"2"],"id":1}, the args parameter will receive only the [1,"2"]
 ```
 
-## Client
+### Client
 
 Available through `stratum.Client`
 
@@ -346,7 +345,7 @@ client.connect(8080, 'localhost').then(function(socket){
 });
 ```
 
-## Daemon
+### Daemon
 
 Available through `stratum.Daemon`
 
@@ -400,26 +399,27 @@ daemon.call('getinfo', []).then(
 );
 ```
 
-## Utils
+### Utils
 
 Node-Stratum comes with a few already used common util libraries, that can be accessed through `stratum.*`, that are:
 
 * Lo-dash through `stratum.lodash`
 * Filesystem through `stratum.fs`
-* through `stratum.net`
+* TCP through `stratum.net`
 * UUID through `stratum.uuid`
-* Q promises through `stratum.q`
+* Promises through `stratum.q`
 * JSON RPC 2.0 through `stratum.rpc`
+* Partial functions through `stratum.curry`
 
 Use at will.
 
-# Debugging
+## Debugging
 
 Export/set the environment variable `DEBUG=stratum` on your command line before executing your code, that you'll be able to see everything behind the hood inside this module on the command line.
 
 You can additionally set `DEBUG=stratum,jsonrpc` to also see the RPC part in-depth (for `stratum.Daemon` and `stratum.RPCServer`)
 
-# Do you like it? Wanna support the development?
+## Wanna support the development?
 
 ```bash
 npm star stratum
@@ -429,6 +429,6 @@ npm star stratum
 
 `LTC: LW2kXiquqDu3GfpfBX2xNTSgjVmBPu6g3z`
 
-`PPC: PNKZEkDf9eBSNebu2CcxHaGuma6wHuZEBh`
-
 `XPM: ARKZ7uVE1YS19HC8jSq5xZGkr6YAzugWBv`
+
+`NXT: 4511725246738523673`

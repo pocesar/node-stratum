@@ -1,6 +1,6 @@
 var stratum = require('../lib'),
     Server = stratum.Server,
-    server = Server.create();
+    server = Server.$create();
 
 server.on('mining', function(req, deferred, socket){
   // req is {method:"", id:0, params: []}
@@ -28,8 +28,13 @@ server.on('mining', function(req, deferred, socket){
       //
       // Resolve the deferred, so the command is sent to the socket
 
-      deferred // difficulty, subscription_id, extranonce1, extranonce2_size
-        .resolve(['b4b6693b72a50c7116db18d6497cac52','ae6812eb4cd7735a302a8a9dd95cf71f', '08000002', 4]);
+      deferred
+        .resolve([
+          'b4b6693b72a50c7116db18d6497cac52',  // difficulty
+          'ae6812eb4cd7735a302a8a9dd95cf71f',  // subscription_id
+          '08000002',                          // extranonce1
+          4                                    // extranonce2_size
+        ]);
 
       // the resulting command will be [[["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"], ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]], "08000002", 4]
 
@@ -111,7 +116,7 @@ server.on('mining', function(req, deferred, socket){
       // this will never be reached, since the server checks if the method
       // is valid before emitting the 'mining' event.
 
-      // This error will go directly to mining.error
+      // This error SHOULD go directly to mining.error (or it's a flaw in the code)
       deferred.reject(Server.errors.METHOD_NOT_FOUND);
   }
 });
@@ -191,6 +196,6 @@ setTimeout(function broadcast(){
   );
 }, 150000); */
 
-server.listen().then(function(msg){
+server.listen().done(function(msg){
   console.log(msg);
 });

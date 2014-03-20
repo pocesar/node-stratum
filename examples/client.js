@@ -1,6 +1,6 @@
 var stratum = require('../lib');
 
-var client = stratum.Client.create();
+var client = stratum.Client.$create();
 
  //must be specified per EventEmitter requirements
 client.on('error', function(socket){
@@ -46,7 +46,7 @@ client.on('mining', function(data, socket, type){
         if (!submitted) {
           console.log('Lets submit fake data once for test purposes, then close');
           socket.stratumSubmit('', '' ,'' ,' ', '').done(function(){
-            client.destroy(); // after this point, "client" doesnt exist anymore
+            client.destroy(); // after call to destroy, "client" doesnt exist anymore
           });
           submitted = true;
         }
@@ -72,7 +72,7 @@ client.connect({
       function(socket){
         console.log('Sent!');
       },
-      function(socket, error){
+      function(error){
         console.log('Error');
       }
     );
