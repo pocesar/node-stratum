@@ -1,3 +1,4 @@
+/*jshint loopfunc:true,forin:false*/
 'use strict';
 
 var
@@ -14,6 +15,26 @@ function promisesArray(defers){
     out.push(t.promise);
   });
   return out;
+}
+
+function createDefers(defers){
+  var out = [];
+  for (var i = 0; i < defers; i++) {
+    out.push(stratum.q.defer());
+  }
+  return {
+    promise: stratum.q.all(promisesArray(out)),
+    next: function(value){
+      if (defers === 0) {
+        throw new Error('Exceeded next calls');
+      }
+      out[--defers].resolve(value);
+      return out[defers].promise;
+    },
+    get current(){
+      return defers;
+    }
+  };
 }
 
 module.exports = {
@@ -167,25 +188,25 @@ module.exports = {
         var
           client = stratum.Client.$create(),
           server = stratum.Server.$create(),
-          defers = [
-            stratum.q.defer(),
-            stratum.q.defer()
-          ],
+          defers = createDefers(6),
           cmd = '{"method":"mining.subscribe","params":[],"id":1}\n{"method":"mining.authorize","params":[],"id":1}\n',
           cmds = stratum.Server.getStratumCommands(new Buffer(cmd));
+
+        sinon.stub(client, 'send');
 
         server.on('mining', function (req, deferred, socket){
           expect(socket).to.be(client);
           expect(this).to.be(server);
+
           if (/authorize|subscribe|set_difficulty/.test(req.method)) {
-            defers[0].resolve();
+            defers.next(req.method);
           }
         });
 
         server.on('mining.error', function (error, socket){
           expect(socket).to.be(client);
-          expect(error).to.match(/Client trying to reach a broadcast function|Stratum request without method or result field/);
-          defers[1].resolve();
+          expect(error).to.match(/Client trying to reach a broadcast function|Stratum request without method or result field|Method not found/);
+          defers.next(error.toString());
         });
 
         stratum.Server.processCommands.call(
@@ -203,6 +224,12 @@ module.exports = {
         stratum.Server.processCommands.call(
           server,
           client,
+          stratum.Server.getStratumCommands(new Buffer('{"method":"mining.invalid","params":[],"id":1}\n')).cmds
+        );
+
+        stratum.Server.processCommands.call(
+          server,
+          client,
           stratum.Server.getStratumCommands(new Buffer('{"method":"mining.set_difficulty","params":[],"id":1}\n')).cmds
         );
 
@@ -212,19 +239,86 @@ module.exports = {
           stratum.Server.getStratumCommands(new Buffer('{"jsonrpc":"2.0","params":[],"id":0}')).cmds
         );
 
-        stratum.q.all(promisesArray(defers)).done(function (){
+        defers.promise.spread(function (err,  broadcast, invalid, sub2, authorize, sub1){
+          expect(sub1).to.be('subscribe');
+          expect(authorize).to.be('authorize');
+          expect(sub2).to.be('subscribe');
+          expect(broadcast).to.match(/ Client trying to reach a broadcast function/);
+          expect(err).to.match(/Stratum request without method or result field/);
+          expect(invalid).to.match(/Method not found/);
+
           server.removeAllListeners();
           done();
         });
       },
 
-      'process commands on the client': function (){
+      'process commands on the client': function (done){
         var
           client = stratum.Client.$create(),
-          cmd = '{"method":"subscribe","params":[],"id":1}\n{"method":"authorize","params":[],"id":1}',
+          defers = createDefers(2),
+          cmd = new Buffer('{"result":true,"error":null,"id":1}\n{"result":false,"error":null,"id":2}\n'),
           cmds = stratum.Server.getStratumCommands(cmd);
 
-        stratum.Server.processCommands.call(client, client, cmds.cmds);
+        sinon.stub(client, 'send');
+
+        client.on('mining', function(req, socket, type){
+          expect(type).to.be('result');
+          expect(socket).to.be(client);
+
+          defers.next(req.result);
+        });
+
+        stratum.Server.processCommands.call(
+          client,
+          client,
+          cmds.cmds
+        );
+
+        defers.promise.done(function(res){
+          expect(res[0]).to.be(false);
+          expect(res[1]).to.be(true);
+          done();
+        });
+      },
+
+      'expose' : function(done){
+        var
+          ev = stratum.Base.$create(),
+          spy = sinon.spy(),
+          defers = createDefers(2),
+          f = stratum.Server.expose(ev, 'test');
+
+        ev.on('rpc', function(name, args, connection, d){
+          expect(this).to.be(ev);
+          expect(name).to.be('test');
+
+          if (defers.current === 2) {
+            expect(args).to.eql([1,2,3]);
+            d.resolve(['ok!']);
+
+            d.promise.then(function(){
+              expect(spy.lastCall.thisValue).to.be(ev);
+              expect(spy.lastCall.args).to.eql([null, ['ok!']]);
+
+              defers.next();
+
+              f([], {}, spy);
+            });
+          } else if (defers.current === 1) {
+            d.reject(['fail']);
+            d.promise.catch(function(){
+              expect(spy.lastCall.thisValue).to.be(ev);
+              expect(spy.lastCall.args).to.eql(['fail']);
+              defers.next();
+            });
+          }
+        });
+
+        f([1,2,3], {}, spy);
+
+        defers.promise.done(function(){
+          done();
+        });
       },
 
       'handle socket data': function (done){
@@ -233,27 +327,26 @@ module.exports = {
           server = stratum.Server.$create(),
           cmd = new Buffer('{"method":"subscribe","params":[],"id":1}\n{"method":"authorize","params":[],"id":1}'),
           cmds = stratum.Server.getStratumCommands(cmd),
-          defers = [stratum.q.defer(), stratum.q.defer()],
+          defers = createDefers(3),
           buf = new Buffer(['GET / HTTP/1.1', ''].join('\n'));
 
-        var spy = sinon.spy(stratum.Server,'getStratumCommands');
+        sinon.spy(stratum.Server, 'getStratumCommands');
 
         sinon.stub(client, 'stratumHttpHeader', function (host, port){
           expect(host).to.equal(server.opts.settings.hostname);
           expect(port).to.equal(server.opts.settings.port);
-          defers[0].resolve();
 
-          return defers[0].promise;
+          return defers.next();
         });
 
-        sinon.stub(server, 'closeConnection', function (){});
+        sinon.stub(server, 'closeConnection');
 
         sinon.stub(stratum.Server, 'processCommands', function (){
           var args = stratum.Server.processCommands.args[0];
-          expect(stratum.Server.processCommands.thisValues[0]).to.eql(server);
+          expect(stratum.Server.processCommands.thisValues[0]).to.be(server);
           expect(args[0]).to.be(client);
           expect(args[1]).to.eql(cmds.cmds);
-          defers[1].resolve();
+          defers.next();
         });
 
         server.handleData(client, buf); // HTTP
@@ -264,7 +357,10 @@ module.exports = {
 
         server.handleData(client, new Buffer('\x10\x19\x18\x10\x00\x00\x00\x12')); // Garbage
 
-        stratum.q.all(promisesArray(defers)).done(function (){
+        server.handleData(client, new Buffer(0)); // really empty
+
+        defers.promise.done(function (){
+          expect(stratum.Server.getStratumCommands.callCount).to.equal(5);
           stratum.Server.processCommands.restore();
           stratum.Server.getStratumCommands.restore();
           done();
@@ -332,7 +428,7 @@ module.exports = {
         })
         .then(function(){
           sinon.stub(client, 'stratumSend', function(){
-            return stratum.resolve('done');
+            return stratum.q.resolve('done');
           });
           return server.sendToId(client.id, 'subscribe', ['difficulty', 'subscription', 'extranonce1', 'extranonce2_size']);
         })
@@ -346,19 +442,16 @@ module.exports = {
       'bindCommand': function (done){
         var
           client = stratum.Client.$create(),
-          functions = {
-            'subscribe'       : 0,
-            'submit'          : 0,
-            'error'           : 0,
-            'authorize'       : 0,
-            'get_transactions': 0,
-            'notify'          : 0,
-            'set_difficulty'  : 0,
-            'update_block'    : 0
-          },
-          defers = [],
-          size = _.size(functions),
+          functions = Object.keys(stratum.Server.commands),
+          defers = [], f,
+          size = functions.length,
           spy = sinon.spy(stratum.Server, 'rejected');
+
+        stratum.Server.commands.subscribe().catch(function(err){
+          expect(err).to.be('No ID provided');
+        }).done();
+
+        client.subscription = true;
 
         sinon.stub(client, 'stratumSend', function (opts, bypass){
           return stratum.q.resolve({
@@ -367,19 +460,81 @@ module.exports = {
           });
         });
 
-        for (var i in functions) {
-          if (functions.hasOwnProperty(i)) {
-            defers.push(stratum.Server.bindCommand(client, i, 1)());
-          }
+        for (var i = 0; i < size; i++) {
+          f = stratum.Server.bindCommand(client, functions[i], 'asdf');
+          //console.log(functions[i], f);
+          defers.push(f());
         }
 
         stratum.q.all(defers).catch(function (err){
-          expect(spy.callCount).to.equal(size);
+          //console.log(err);
         }).done(function (){
+          expect(spy.callCount).to.equal(size + 1);
           stratum.Server.rejected.restore();
           done();
         });
+      },
+
+      'addDaemon throws': function() {
+        var server = stratum.Server.$create();
+        expect(server.addDaemon.bind(server, {})).to.throwException(/addDaemon expects a full daemon configuration object/);
+        var dummy = {'name':'bitcoin','user':' ','password':' ','host':' ', 'port': ' '};
+        server.addDaemon(dummy);
+        expect(function(){
+          server.addDaemon(dummy);
+        }).to.throwException(/daemon already included "bitcoin"/);
+
+        expect(Object.keys(server.daemons)).to.have.length(1);
+      },
+
+      'broadcast': function(done){
+        var
+          i = 0, server = new stratum.Server(), events = {connection: 0};
+
+        server.broadcast('set_difficulty',['asdf']).catch(function(err){
+          expect(err).to.be('No clients connected');
+
+          server.on('connection', function(s){
+            events.connection++;
+
+            s.on('mining', function(){
+              //console.log(arguments);
+            });
+          });
+
+          while(i++ < 10) {
+            var client = new stratum.net.Socket();
+
+            server.newConnection(client);
+          }
+
+          for(var id in server.clients) {
+            sinon.stub(server.clients[id], 'send', function(cli){
+              return stratum.q.resolve(cli);
+            }.bind(server.clients[id]));
+          }
+
+          server.broadcast().catch(function(err){
+            expect(err).to.be('Missing type and data array parameters');
+            return server.broadcast('set_difficulty');
+          }).catch(function(err){
+            expect(err).to.be('Missing type and data array parameters');
+            return server.broadcast('subscribe', ['asdf']);
+          }).catch(function(err){
+            expect(err).to.be('Invalid broadcast type "subscribe"');
+            return stratum.q.all([
+              server.broadcast('set_difficulty', ['asdf']),
+              server.broadcast('notify', ['asdf','adf','asdf','asdf','adf','adsf','adsf','asdf','asdf'])
+            ]);
+          }).done(function(results){
+            expect(results[0]).to.equal(i-1);
+            expect(results[1]).to.equal(i-1);
+            expect(events.connection).to.equal(i-1);
+            done();
+          });
+        });
       }
+
     },
 
     Client: {
@@ -388,11 +543,137 @@ module.exports = {
         var socket = new stratum.net.Socket();
 
         expect(stratum.Client.createSocket(socket)).to.be(socket);
+      },
+
+      'setLastActivity': function(done){
+        var client = new stratum.Client();
+
+        client.setLastActivity();
+        setTimeout(function(){
+          expect(client.lastActivity).to.be.lessThan(Date.now());
+          client.setLastActivity(1);
+          expect(client.lastActivity).to.be(1);
+          done();
+        }, 0);
+      },
+
+      'events emitted from underlaying socket': function(done){
+        var
+          client = new stratum.Client(),
+          defers = createDefers(3),
+          cb, socket = client.socket;
+
+        cb = function(self){
+          defers.next(self);
+        };
+
+
+        client.on('drain', cb);
+
+        client.on('end', cb);
+
+        client.on('error', cb);
+
+        socket.emit('drain');
+        socket.emit('end');
+        socket.emit('error');
+
+        // destroy the client, but the socket is alive and bound, shouldn't throw
+
+        client.$destroy();
+
+        socket.emit('drain');
+        socket.emit('end');
+        socket.emit('error');
+
+        defers.promise.spread(function(drain, end, error){
+          expect(drain).to.be(client);
+          expect(end).to.be(client);
+          expect(error).to.be(client);
+          done();
+        });
       }
 
     },
 
     ClientServer: {
+
+      'built in commands': function(done){
+        var
+          socket = new (require('stream')).PassThrough(),
+          client, defers = createDefers(6),
+          server = new stratum.Server();
+
+        socket.setNoDelay = function(){};
+        socket.setKeepAlive = function(){};
+
+        server.on('connection', function(s){
+          client = s;
+
+          client.on('mining', function(req, cli, type, method){
+            defers.next(method);
+            //console.log('client', req, type, method);
+
+            switch (method) {
+              case 'subscribe':
+                expect(req.result).to.eql([[
+                    ['mining.set_difficulty', 'a'],
+                    ['mining.notify', 'b']
+                  ],
+                  'c',
+                  'd'
+                ]);
+                expect(cli.authorized).to.be(false);
+                s.stratumAuthorize('user', 'pass');
+                break;
+              case 'authorize':
+                expect(req.result).to.be(true);
+                expect(cli.authorized).to.be(true);
+                s.stratumSubmit('a','b','c','d','f');
+                break;
+              case 'submit':
+                expect(req.result).to.be(true);
+                break;
+            }
+
+          });
+
+          client.on('mining.error', function(err){
+            //console.log('client.error', err);
+          });
+
+          s.stratumSubscribe('Test');
+        });
+
+        server.on('mining', function(req, res){
+          //console.log('server', req);
+          defers.next(req.method);
+          switch (req.method) {
+            case 'subscribe':
+              expect(req.params).to.eql(['Test']);
+              res.resolve(['a','b','c','d']);
+              break;
+            case 'authorize':
+              expect(req.params).to.eql(['user','pass']);
+              res.resolve([true]);
+              break;
+            case 'submit':
+              expect(req.params).to.eql(['a', 'b', 'c', 'd', 'f' ]);
+              res.resolve([true]);
+              break;
+          }
+        });
+
+        server.on('mining.error', function(err){
+          //console.log('server.error', err);
+        });
+
+        server.newConnection(socket);
+
+        defers.promise.spread(function(){
+          done();
+        });
+      }
 
     },
 
