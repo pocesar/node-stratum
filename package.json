@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -61,7 +61,7 @@
   },
   "scripts": {
     "test": "jshint lib test && mocha",
-    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -t 5000",
-    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly -t 5000 && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha",
+    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
   }
 }
