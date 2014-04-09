@@ -4,5 +4,5 @@ node_js:
 branches:
   only:
     - master
-after_script:
+after_success:
   - npm run coveralls
