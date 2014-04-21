@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -38,7 +38,7 @@
     "socket"
   ],
   "dependencies": {
-    "es5class": "*",
+    "es5class": "1.x.x",
     "commander": "*",
     "chalk": "*",
     "json-rpc2": "*",
