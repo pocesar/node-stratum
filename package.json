@@ -1,14 +1,13 @@
 {
   "name": "stratum",
-  "version": "0.2.2",
-  "preferGlobal": true,
+  "version": "0.2.3",
   "repository": {
     "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
   },
   "license": "GPLv2",
   "engines": {
-    "node": "0.10.x"
+    "node": "0.10.x || 0.12.x"
   },
   "bin": {
     "stratum-notify": "./bin/stratum-notify"
