@@ -44,10 +44,10 @@
     "json-rpc2": "*",
     "debug": "*",
     "toobusy-js": "*",
-    "lodash": "*",
-    "bluebird": "*",
+    "lodash": "3.x",
+    "bluebird": "2.x",
     "uuid": "*",
-    "eventemitter3": "*",
+    "eventemitter3": "1.x",
     "better-curry": "*"
   },
   "devDependencies": {
