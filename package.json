@@ -1,6 +1,6 @@
 {
   "name": "stratum",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/pocesar/node-stratum.git"
@@ -40,7 +40,7 @@
     "es5class": "1.x.x",
     "commander": "*",
     "chalk": "*",
-    "json-rpc2": "*",
+    "json-rpc2": "1.x",
     "debug": "*",
     "toobusy-js": "*",
     "lodash": "3.x",
