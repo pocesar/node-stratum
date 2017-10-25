@@ -50,7 +50,7 @@
     "better-curry": "*"
   },
   "devDependencies": {
-    "mocha": "*",
+    "mocha": "3.5.3",
     "jshint": "*",
     "expect.js": "*",
     "sinon": "*",
