@@ -1,5 +1,6 @@
 --reporter list
 --ui exports
 --check-leaks
+--exit
 --timeout 5000
 test/tests.js
