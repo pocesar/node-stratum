@@ -3,9 +3,13 @@
 
 var
   expect = require('expect.js'),
-  stratum = require('../lib'),
+  stratum = require('../lib').default,
   sinon = require('sinon'),
-  _ = stratum.lodash,
+  _ = require('lodash'),
+  net = require('net'),
+  q = require('bluebird'),
+  path = require('path'),
+  rpc = require('json-rpc2'),
   EventEmitter = stratum.Base,
   child_process;
 
@@ -20,10 +24,17 @@ function promisesArray(defers){
 function createDefers(defers){
   var out = [];
   for (var i = 0; i < defers; i++) {
-    out.push(stratum.q.defer());
+    (function(){
+      var resolve, reject;
+      var defer = new q(function(_resolve, _reject){
+         resolve =  _resolve;
+         reject = _reject;
+      })
+      out.push({ promise: defer, resolve, reject });
+    })()
   }
   return {
-    promise: stratum.q.all(promisesArray(out)),
+    promise: q.all(promisesArray(out)),
     next: function(value){
       if (defers === 0) {
         throw new Error('Exceeded next calls');
@@ -43,7 +54,7 @@ module.exports = {
     Base: {
 
       'events': function (done){
-        var base = stratum.Base.$create();
+        var base = new stratum.Base();
 
         base.on('event', function (arg){
           expect(arg).to.equal(1);
@@ -58,17 +69,17 @@ module.exports = {
     Server: {
 
       'inheritance from base': function (){
-        var server = stratum.Server.$create();
+        var server = new stratum.Server();
 
         expect(server).to.be.ok();
-        expect(server.$instanceOf(stratum.Base)).to.equal(true);
-        expect(server.$instanceOf(stratum.Server)).to.equal(true);
+        expect(server instanceof stratum.Base).to.equal(true);
+        expect(server instanceof stratum.Server).to.equal(true);
       },
 
       'instance sets RPC server if in options': function(){
-        sinon.stub(stratum.RPCServer.prototype, 'expose', function(){});
+        sinon.stub(stratum.RPCServer.prototype, 'expose').callsFake(function(){});
 
-        var server = stratum.Server.$create({
+        var server = new stratum.Server({
           rpc: {
             port    : 8080,
             password: 'password'
@@ -86,17 +97,17 @@ module.exports = {
 
       'close socket connection': function(done){
         var
-          socket = stratum.Client.$create(),
+          socket = new stratum.Client(),
           calls = 0,
           id = socket.id,
-          server = stratum.Server.$create();
+          server = new stratum.Server();
 
         server.clients[id] = socket;
 
         server.on('close', function(_id){
           expect(_id).to.be(id);
           if (calls === 0) {
-            socket = stratum.Client.$create();
+            socket = new stratum.Client();
             id = socket.id;
           }
           if (calls++ === 1){
@@ -110,9 +121,9 @@ module.exports = {
       },
 
       'socket connection calls newConnection': function(done){
-        var server = stratum.Server.$create();
+        var server = new stratum.Server();
 
-        sinon.stub(server, 'newConnection', function(socket){
+        sinon.stub(server, 'newConnection').callsFake(function(socket){
           expect(socket).to.be(true);
           done();
         });
@@ -121,16 +132,16 @@ module.exports = {
       },
 
       'emits busy event when too much CPU': function(done){
-        sinon.stub(stratum, 'toobusy', function(){
-          return true;
-        });
-
         var
-          server = stratum.Server.$create(),
-          socket = stratum.Client.$create();
+          server = new stratum.Server(),
+          socket = new stratum.Client();
+
+        sinon.stub(server, '_tooBusy').callsFake(function(){
+          return true;
+        })
 
         server.on('busy', function(){
-          stratum.toobusy.restore();
+          server._tooBusy.restore();
           done();
         });
 
@@ -139,9 +150,9 @@ module.exports = {
 
       'wraps net Socket in Client class on new connection': function(done){
         var
-          socket = stratum.net.Socket(),
+          socket = new net.Socket(),
           found = false,
-          server = stratum.Server.$create();
+          server = new stratum.Server();
 
         server.on('connection', function(_socket){
           for (var uuid in server.clients) {
@@ -151,11 +162,11 @@ module.exports = {
             }
           }
 
-          sinon.stub(server,'closeConnection', function(s){
+          sinon.stub(server,'closeConnection').callsFake(function(s){
             expect(s).to.be(_socket);
             _socket.socket.emit('data');
           });
-          sinon.stub(server, 'handleData', function(){
+          sinon.stub(server, 'handleData').callsFake(function(){
             expect('called').to.be('called');
             done();
           });
@@ -186,8 +197,8 @@ module.exports = {
 
       'process commands on the server': function (done){
         var
-          client = stratum.Client.$create(),
-          server = stratum.Server.$create(),
+          client = new stratum.Client(),
+          server = new stratum.Server(),
           defers = createDefers(6),
           cmd = '{"method":"mining.subscribe","params":[],"id":1}\n{"method":"mining.authorize","params":[],"id":1}\n',
           cmds = stratum.Server.getStratumCommands(new Buffer(cmd));
@@ -254,7 +265,7 @@ module.exports = {
 
       'process commands on the client': function (done){
         var
-          client = stratum.Client.$create(),
+          client = new stratum.Client(),
           defers = createDefers(2),
           cmd = new Buffer('{"result":true,"error":null,"id":1}\n{"result":false,"error":null,"id":2}\n'),
           cmds = stratum.Server.getStratumCommands(cmd);
@@ -283,7 +294,7 @@ module.exports = {
 
       'expose' : function(done){
         var
-          ev = stratum.Base.$create(),
+          ev = new stratum.Base(),
           spy = sinon.spy(),
           defers = createDefers(2),
           f = stratum.Server.expose(ev, 'test');
@@ -323,8 +334,8 @@ module.exports = {
 
       'handle socket data': function (done){
         var
-          client = stratum.Client.$create(),
-          server = stratum.Server.$create(),
+          client = new stratum.Client(),
+          server = new stratum.Server(),
           cmd = new Buffer('{"method":"subscribe","params":[],"id":1}\n{"method":"authorize","params":[],"id":1}'),
           cmds = stratum.Server.getStratumCommands(cmd),
           defers = createDefers(3),
@@ -332,7 +343,7 @@ module.exports = {
 
         sinon.spy(stratum.Server, 'getStratumCommands');
 
-        sinon.stub(client, 'stratumHttpHeader', function (host, port){
+        sinon.stub(client, 'stratumHttpHeader').callsFake(function (host, port){
           expect(host).to.equal(server.opts.settings.hostname);
           expect(port).to.equal(server.opts.settings.port);
 
@@ -341,7 +352,7 @@ module.exports = {
 
         sinon.stub(server, 'closeConnection');
 
-        sinon.stub(stratum.Server, 'processCommands', function (){
+        sinon.stub(stratum.Server, 'processCommands').callsFake(function (){
           var args = stratum.Server.processCommands.args[0];
           expect(stratum.Server.processCommands.thisValues[0]).to.be(server);
           expect(args[0]).to.be(client);
@@ -376,17 +387,17 @@ module.exports = {
               host: 'localhost'
             }
           },
-          server = stratum.Server.$create(opts);
+          server = new stratum.Server(opts);
 
-        server.rpc = new sinon.createStubInstance(stratum.RPCServer);
+        server.rpc = sinon.createStubInstance(stratum.RPCServer);
 
-        sinon.stub(server.server, 'listen', function(port, host, cb){
+        sinon.stub(server.server, 'listen').callsFake(function(port, host, cb){
           expect(port).to.be(opts.settings.port);
           expect(host).to.be(opts.settings.host);
           cb();
         });
 
-        sinon.stub(server.server, 'close', function(){});
+        sinon.stub(server.server, 'close').callsFake(function(){});
 
         server.listen().done(function(){
           expect(server.rpc.listen.called).to.be(true);
@@ -403,32 +414,32 @@ module.exports = {
       'send to id': function(done){
         var
           number = 0,
-          server = stratum.Server.$create(),
-          client = stratum.Client.$create();
+          server = new stratum.Server(),
+          client = new stratum.Client();
 
         server.clients[client.id] = client;
 
         server.sendToId().catch(function(err){
           number++;
-          expect(err).to.be('sendToId command doesnt exist "undefined"');
+          expect(err).to.match(/sendToId command doesnt exist "undefined"/);
         })
         .then(function(){
           return server.sendToId(null, 'doesnt');
         })
         .catch(function(err){
           number++;
-          expect(err).to.be('sendToId command doesnt exist "doesnt"');
+          expect(err).to.match(/sendToId command doesnt exist "doesnt"/);
         })
         .then(function(){
           return server.sendToId('invalidid', 'subscribe');
         })
         .catch(function(err){
           number++;
-          expect(err).to.be('sendToId socket id not found "invalidid"');
+          expect(err).to.match(/sendToId socket id not found "invalidid"/);
         })
         .then(function(){
-          sinon.stub(client, 'stratumSend', function(){
-            return stratum.q.resolve('done');
+          sinon.stub(client, 'stratumSend').callsFake(function(){
+            return q.resolve('done');
           });
           return server.sendToId(client.id, 'subscribe', ['difficulty', 'subscription', 'extranonce1', 'extranonce2_size']);
         })
@@ -441,7 +452,7 @@ module.exports = {
 
       'bindCommand': function (done){
         var
-          client = stratum.Client.$create(),
+          client = new stratum.Client(),
           functions = Object.keys(stratum.Server.commands),
           defers = [], f,
           size = functions.length,
@@ -451,10 +462,10 @@ module.exports = {
           expect(err).to.be('No ID provided');
         }).done();
 
-        client.subscription = true;
+        client.subscription = "true";
 
-        sinon.stub(client, 'stratumSend', function (opts, bypass){
-          return stratum.q.resolve({
+        sinon.stub(client, 'stratumSend').callsFake(function (opts, bypass){
+          return q.resolve({
             opts  : opts,
             bypass: bypass
           });
@@ -466,7 +477,7 @@ module.exports = {
           defers.push(f());
         }
 
-        stratum.q.all(defers).catch(function (err){
+        q.all(defers).catch(function (err){
           //console.log(err);
         }).done(function (){
           expect(spy.callCount).to.equal(size + 1);
@@ -476,7 +487,7 @@ module.exports = {
       },
 
       'addDaemon throws': function() {
-        var server = stratum.Server.$create();
+        var server = new stratum.Server();
         expect(server.addDaemon.bind(server, {})).to.throwException(/addDaemon expects a full daemon configuration object/);
         var dummy = {'name':'bitcoin','user':' ','password':' ','host':' ', 'port': ' '};
         server.addDaemon(dummy);
@@ -492,7 +503,7 @@ module.exports = {
           i = 0, server = new stratum.Server(), events = {connection: 0};
 
         server.broadcast('set_difficulty',['asdf']).catch(function(err){
-          expect(err).to.be('No clients connected');
+          expect(err).to.match(/No clients connected/);
 
           server.on('connection', function(s){
             events.connection++;
@@ -503,26 +514,26 @@ module.exports = {
           });
 
           while(i++ < 10) {
-            var client = new stratum.net.Socket();
+            var client = new net.Socket();
 
             server.newConnection(client);
           }
 
           for(var id in server.clients) {
-            sinon.stub(server.clients[id], 'send', function(cli){
-              return stratum.q.resolve(cli);
+            sinon.stub(server.clients[id], 'send').callsFake(function(cli){
+              return q.resolve(cli);
             }.bind(server.clients[id]));
           }
 
           server.broadcast().catch(function(err){
-            expect(err).to.be('Missing type and data array parameters');
+            expect(err).to.match(/Missing type and data array parameters/);
             return server.broadcast('set_difficulty');
           }).catch(function(err){
-            expect(err).to.be('Missing type and data array parameters');
+            expect(err).to.match(/Missing type and data array parameters/);
             return server.broadcast('subscribe', ['asdf']);
           }).catch(function(err){
-            expect(err).to.be('Invalid broadcast type "subscribe"');
-            return stratum.q.all([
+            expect(err).to.match(/Invalid broadcast type "subscribe"/);
+            return q.all([
               server.broadcast('set_difficulty', ['asdf']),
               server.broadcast('notify', ['asdf','adf','asdf','asdf','adf','adsf','adsf','asdf','asdf'])
             ]);
@@ -540,7 +551,7 @@ module.exports = {
     Client: {
 
       'accepts existing socket': function(){
-        var socket = new stratum.net.Socket();
+        var socket = new net.Socket();
 
         expect(stratum.Client.createSocket(socket)).to.be(socket);
       },
@@ -580,7 +591,7 @@ module.exports = {
 
         // destroy the client, but the socket is alive and bound, shouldn't throw
 
-        client.$destroy();
+        //client.$destroy();
 
         socket.emit('drain');
         socket.emit('end');
@@ -684,7 +695,7 @@ module.exports = {
       },
 
       'default opts': function (){
-        var rpc = stratum.RPCServer.$create(this.opts);
+        var rpc = new stratum.RPCServer(this.opts);
 
         expect(rpc.opts).to.eql({
           'mode'    : 'tcp',
@@ -696,29 +707,29 @@ module.exports = {
 
       'missing required parameters': function (){
         expect(function (){
-          stratum.RPCServer.$create();
+          new stratum.RPCServer();
         }).to.throwError(/Port must be set/);
 
         expect(function (){
-          stratum.RPCServer.$create({port: 9999});
+          new stratum.RPCServer({port: 9999});
         }).to.throwError(/Password must be set/);
       },
 
       'malformed base64 password': function (){
-        var rpc = stratum.RPCServer.$create(this.opts);
+        var rpc = new stratum.RPCServer(this.opts);
 
         expect(rpc._password('9s7w45fcsaplw735gfal')).to.equal(false);
       },
 
       'working base64 password': function (){
-        var rpc = stratum.RPCServer.$create(this.opts);
+        var rpc = new stratum.RPCServer(this.opts);
 
         // YmFzZTY0 = base64
         expect(rpc._password('YmFzZTY0')).to.equal('371a286d5872a3730d644327581546ec3e658bbf1a3c7f7f0de2bc19905d4402');
       },
 
       'authentication': function (){
-        var rpc = stratum.RPCServer.$create(this.opts),
+        var rpc = new stratum.RPCServer(this.opts),
           cb = sinon.spy(),
           Context = sinon.stub({
             'exposed': function (){ return true; }
@@ -747,14 +758,12 @@ module.exports = {
 
       'no context': function (){
         var
-          rpc = stratum.RPCServer.$create(this.opts),
+          rpc = new stratum.RPCServer(this.opts),
           cb = sinon.spy();
 
-        rpc.$import({
-          testing: function (){
-            return true;
-          }
-        });
+        rpc['testing'] = function (){
+          return true;
+        }
 
         sinon.spy(rpc, 'testing');
 
@@ -767,7 +776,7 @@ module.exports = {
       },
 
       'already listening exception': function (){
-        var server = stratum.RPCServer.$create(this.opts);
+        var server = new stratum.RPCServer(this.opts);
 
         server._server = true;
 
@@ -777,7 +786,7 @@ module.exports = {
       },
 
       'tcp RPC command': function (done){
-        var server = stratum.RPCServer.$create(this.opts),
+        var server = new stratum.RPCServer(this.opts),
           exposed = {
             'func': function (args, opts, callback){
               callback(null, args);
@@ -785,7 +794,7 @@ module.exports = {
           },
           spy = sinon.spy(exposed, 'func'),
           bound = {_server: null},
-          client = stratum.rpc.Client.$create(server.opts.port, 'localhost');
+          client = new rpc.Client(server.opts.port, 'localhost');
 
 
         expect(stratum.RPCServer.prototype.close.bind(bound)()).to.be(bound);
@@ -803,14 +812,14 @@ module.exports = {
       },
 
       'http RPC command': function (done){
-        var server = stratum.RPCServer.$create(_.defaults({mode: 'http'}, this.opts)),
+        var server = new stratum.RPCServer(_.defaults({mode: 'http'}, this.opts)),
           exposed = {
             'func': function (args, opts, callback){
               callback(null, args);
             }
           },
           spy = sinon.spy(exposed, 'func'),
-          client = stratum.rpc.Client.$create(server.opts.port, 'localhost');
+          client = new rpc.Client(server.opts.port, 'localhost');
 
         server.expose('func', exposed.func, exposed).listen();
 
@@ -823,14 +832,14 @@ module.exports = {
       },
 
       'TCP/HTTP RPC command': function (done){
-        var server = stratum.RPCServer.$create(_.defaults({mode: 'both'}, this.opts)),
+        var server = new stratum.RPCServer(_.defaults({mode: 'both'}, this.opts)),
           exposed = {
             'func': function (args, opts, callback){
               callback(null, args);
             }
           },
           spy = sinon.spy(exposed, 'func'),
-          client = stratum.rpc.Client.$create(server.opts.port, 'localhost');
+          client = new rpc.Client(server.opts.port, 'localhost');
 
         server.expose('func', exposed.func, exposed).listen();
 
@@ -856,7 +865,7 @@ module.exports = {
         child_process = function (){
           var em = new EventEmitter();
 
-          em.kill = sinon.spy();
+          em['kill'] = sinon.spy();
 
           return em;
         };
@@ -864,15 +873,15 @@ module.exports = {
 
       'creation exceptions': function (){
         expect(function (){
-          stratum.Daemon.$create();
+          new stratum.Daemon();
         }).to.throwError(/Daemon options must not be empty/);
 
         expect(function (){
-          stratum.Daemon.$create({path: '//', port: 8080});
+          new stratum.Daemon({path: '//', port: 8080});
         }).to.throwError(/Daemon must have options "user, password, port, host, name" set, there are no defaults/);
 
         expect(function (){
-          stratum.Daemon.$create({
+          new stratum.Daemon({
             path    : '/doesnt/exist/%s',
             datadir : 'data/dir',
             port    : 8080,
@@ -884,7 +893,7 @@ module.exports = {
         }).to.throwError(/Provided daemon "\/doesnt\/exist\/%s" path doesnt exist/);
 
         expect(function (){
-          stratum.Daemon.$create({
+          new stratum.Daemon({
             path    : '/doesnt/exist/%s',
             port    : 8080,
             host    : 'localhost',
@@ -1014,7 +1023,7 @@ module.exports = {
       'close': function (done){
         var clock = sinon.useFakeTimers();
 
-        var daemon = stratum.Daemon.$create({
+        var daemon = new stratum.Daemon({
           path    : '/doesnt/exist/%s',
           port    : 8080,
           host    : 'localhost',
@@ -1024,9 +1033,9 @@ module.exports = {
           name    : 'Mycoin'
         });
 
-        sinon.stub(daemon, '_pathExists', function (){ return true; });
+        sinon.stub(daemon, '_pathExists').callsFake(function (){ return true; });
 
-        sinon.stub(daemon.rpc, 'call', function (name, params, callback){
+        sinon.stub(daemon.rpc, 'call').callsFake(function (name, params, callback){
           if (daemon.callerror === true) {
             callback('error');
           } else {
@@ -1086,7 +1095,7 @@ module.exports = {
       'failed RPC call': function (done){
         var clock = sinon.useFakeTimers();
 
-        var daemon = stratum.Daemon.$create({
+        var daemon = new stratum.Daemon({
           path    : '/doesnt/exist/%s',
           datadir : 'data/dir',
           port    : 8080,
@@ -1096,7 +1105,7 @@ module.exports = {
           name    : 'Mycoin'
         });
 
-        sinon.stub(daemon.rpc, 'call', function (name, params, callback){
+        sinon.stub(daemon.rpc, 'call').callsFake(function (name, params, callback){
           if (name === 'test') {
             callback('error');
           }
@@ -1137,7 +1146,7 @@ module.exports = {
             },
             name       : 'Mycoin'
           },
-          daemon = stratum.Daemon.$create(opts);
+          daemon = new stratum.Daemon(opts);
 
         expect(stratum.Daemon.notify.called).to.be(true);
         expect(daemon.opts.rpcserver.notifyPath).to.equal('stratum-notify');
@@ -1145,14 +1154,14 @@ module.exports = {
         stratum.Daemon.notify.reset();
         delete opts.rpcserver.notifyPath;
 
-        daemon = stratum.Daemon.$create(opts);
+        daemon = new stratum.Daemon(opts);
 
-        expect(daemon.opts.rpcserver.notifyPath).to.equal(stratum.path.join('..', 'bin', 'stratum-notify'));
+        expect(daemon.opts.rpcserver.notifyPath).to.equal(path.join('..', 'bin', 'stratum-notify'));
 
         stratum.Daemon.notify.reset();
         delete opts.rpcserver.notify;
 
-        daemon = stratum.Daemon.$create(opts);
+        daemon = new stratum.Daemon(opts);
         expect(stratum.Daemon.notify.called).to.be(false);
         expect(daemon.opts.rpcserver.notify).to.eql([]);
 
@@ -1163,7 +1172,7 @@ module.exports = {
       },
 
       'spawn daemon': function (done){
-        var invalid = 1, daemon = stratum.Daemon.$create({
+        var invalid = 1, daemon = new stratum.Daemon({
           path    : '/doesnt/exist/%s',
           port    : 8080,
           datadir : 'data/dir',
@@ -1180,8 +1189,8 @@ module.exports = {
 
         var child = child_process();
 
-        sinon.stub(daemon, '_pathExists', function (){ return true; });
-        sinon.stub(daemon, 'spawn', function (){ return child; });
+        sinon.stub(daemon, '_pathExists').callsFake(function (){ return true; });
+        sinon.stub(daemon, 'spawn').callsFake(function (){ return child; });
 
         expect(daemon.start()).to.be(true);
 
@@ -1203,7 +1212,7 @@ module.exports = {
 
           daemon.spawn.restore();
 
-          sinon.stub(daemon, 'spawn', function (){ throw new Error('failed to create process'); });
+          sinon.stub(daemon, 'spawn').callsFake(function (){ throw new Error('failed to create process'); });
 
           expect(daemon.start()).to.be(false);
           done();
@@ -1214,7 +1223,7 @@ module.exports = {
 
       'RPC communication': function (done){
         var
-          daemon = stratum.Daemon.$create({
+          daemon = new stratum.Daemon({
             port    : 59881,
             host    : 'localhost',
             datadir : 'data/dir',
@@ -1224,7 +1233,7 @@ module.exports = {
           })
           ;
 
-        sinon.stub(daemon.rpc, 'call', function (args, opts, callback){
+        sinon.stub(daemon.rpc, 'call').callsFake(function (args, opts, callback){
           expect(opts).to.eql([
             {dummy: true}
           ]);

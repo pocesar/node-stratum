@@ -1,8 +1,12 @@
 language: node_js
 node_js:
-  - "0.10"
+  - "8"
+  - "6"
+  - "5"
 branches:
   only:
     - master
+before_script:
+  - node node_modules/typescript/bin/tsc -p tsconfig.json
 after_success:
   - npm run coveralls

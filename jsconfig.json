@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "strict": true,
+    "module": "commonjs",
+    "lib": [
+      "es2015",
+      "es6"
+    ],
+    "target": "es2015",
+    "noUnusedLocals": true
+  },
+  "typeAcquisition": {
+    "enable": true
+  },
+  "files": [
+    "lib/base.js",
+    "lib/client.js",
+    "lib/daemon.js",
+    "lib/index.js",
+    "lib/rpc.js",
+    "lib/server.js"
+  ]
+}

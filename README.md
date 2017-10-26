@@ -424,15 +424,7 @@ You can additionally set `DEBUG=stratum,jsonrpc` to also see the RPC part in-dep
 
 ## Wanna support the development?
 
-`BTC: 1AGseqNAqh44YvYANMcdduDi73WFU3bHQr`
-
-`LTC: LW2kXiquqDu3GfpfBX2xNTSgjVmBPu6g3z`
-
-`DOGE: DUQ9ipuy6oi3AA9jFkkUp5VCnEvYgyYEL9`
-
-`XPM: ARKZ7uVE1YS19HC8jSq5xZGkr6YAzugWBv`
-
-`NXT: 4511725246738523673`
+`BTC: 1EAfhxEUu1VsEEAAXk3MtTXK3LCrWDhejj`
 
 ```bash
 npm star stratum
