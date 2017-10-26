@@ -3,9 +3,9 @@ var stratum = require('../lib');
 var client = stratum.Client.$create();
 
  //must be specified per EventEmitter requirements
-client.on('error', function(socket){
+client.on('error', function(socket, err){
   socket.destroy();
-  console.log('Connection closed');
+  console.log('Connection closed with error: ', err);
   process.exit(1);
 });
 

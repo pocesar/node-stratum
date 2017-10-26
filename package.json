@@ -50,10 +50,10 @@
     "better-curry": "*"
   },
   "devDependencies": {
-    "mocha": "*",
+    "mocha": "3.5.3",
     "jshint": "*",
     "expect.js": "*",
-    "sinon": "*",
+    "sinon": "1.17.7",
     "istanbul": "*",
     "coveralls": "*",
     "mocha-lcov-reporter": "*"

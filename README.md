@@ -327,6 +327,8 @@ The main reason for this part of the module is that you can setup a stratum prox
 
 You may also test your pool sending arbitrary test data to see if it's responding properly.
 
+If your URL starts with 'stratum+tcp://', remove it!
+
 ```js
 var client = stratum.Client.create();
 
