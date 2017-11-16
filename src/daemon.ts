@@ -1,17 +1,33 @@
-import { spawn } from  "child_process"
-import Base from "./base";
+import { spawn, ChildProcess } from  "child_process"
+import { Base } from "./base";
 import * as _ from "lodash";
 import * as q from "bluebird";
 import * as fs from "fs";
-const RPC = require("json-rpc2").Client;
+import { Client as RPC } from "json-rpc2";
 import * as path from "path";
 
-export default class Daemon extends Base {
+export interface Options {
+  name?: string;
+  path?: string;
+  user?: string;
+  password?: string;
+  port?: number;
+  rpcserver?: {
+    notify?: any;
+    notifyPath?: any;
+  };
+  notify?: string;
+  datadir?: string;
+  host?: string;
+  args?: string[];
+}
+
+export class Daemon extends Base {
   spawn: typeof spawn
   opts: any;
   name: string;
   rpc: any;
-  process: any | null;
+  process: ChildProcess | null;
 
   constructor(opts?) {
     super();
@@ -167,7 +183,7 @@ export default class Daemon extends Base {
         timeout = self._timeout(function daemonProcessTimeout() {
           self.process.kill();
           self.process = null;
-          reject(Daemon.debug("Process didnt respond and was killed"));
+          reject(new Error(Daemon.debug("Process didnt respond and was killed")));
         }, wait ? wait * 1000 : 5000);
 
         self
@@ -180,12 +196,12 @@ export default class Daemon extends Base {
             },
             function daemonProcessStopFailed(err) {
               clearTimeout(timeout);
-              reject(Daemon.debug(err));
+              reject(new Error(Daemon.debug(err)));
             }
           )
           .done();
       } else {
-        reject(Daemon.debug("Process wasnt started"));
+        reject(new Error(Daemon.debug("Process wasnt started")));
       }
     });
   }
@@ -206,7 +222,7 @@ export default class Daemon extends Base {
       params = params === undefined ? [] : params;
 
       timeout = self._timeout(function daemonCallTimeout() {
-        reject(Daemon.debug("Command timed out"));
+        reject(new Error(Daemon.debug("Command timed out")));
       }, 4000);
 
       self.rpc.call(

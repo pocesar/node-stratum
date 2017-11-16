@@ -1,14 +1,16 @@
 /// <reference types="node" />
 /// <reference types="bluebird" />
-import Base from "./base";
-import RPCServer from "./rpc";
+import { Base } from "./base";
+import { RPC } from "./rpc";
 import * as net from "net";
+import { Options } from "./daemon";
 import * as q from "bluebird";
-export default class Server extends Base {
+import { Tuple } from './stratumerror';
+export declare class Server extends Base {
     clients: any;
     daemons: any;
     opts: any;
-    rpc: RPCServer;
+    rpc: RPC;
     server: net.Server;
     constructor(opts?: any);
     _tooBusy(): any;
@@ -111,58 +113,11 @@ export default class Server extends Base {
         notify(id?: any, job_id?: any, previous_hash?: any, coinbase1?: any, coinbase2?: any, branches?: any, block_version?: any, nbit?: any, ntime?: any, clean?: any): any;
         set_difficulty(id?: any, value?: any): any;
     };
-    static errors: {
-        FEE_REQUIRED: (string | number)[];
-        SERVICE_NOT_FOUND: (string | number)[];
-        METHOD_NOT_FOUND: (string | number)[];
-        UNKNOWN: (string | number)[];
-        STALE_WORK: (string | number)[];
-        DUPLICATE_SHARE: (string | number)[];
-        HIGH_HASH: (string | number)[];
-        UNAUTHORIZED_WORKER: (string | number)[];
-        NOT_SUBSCRIBED: (string | number)[];
-    };
+    static errors: Record<string, Tuple>;
     /**
      * Coin daemons, will spawn a process for each enabled process
      */
-    static daemons: {
-        bitcoin: {
-            name: string;
-            path: string;
-            user: string;
-            password: string;
-            port: number;
-            host: string;
-            args: any[];
-        };
-        litecoin: {
-            name: string;
-            path: string;
-            user: string;
-            password: string;
-            port: number;
-            host: string;
-            args: any[];
-        };
-        ppcoin: {
-            name: string;
-            path: string;
-            user: string;
-            password: string;
-            port: number;
-            host: string;
-            args: any[];
-        };
-        primecoin: {
-            name: string;
-            path: string;
-            user: string;
-            password: string;
-            port: number;
-            host: string;
-            args: any[];
-        };
-    };
+    static daemons: Record<string, Options>;
     static defaults: {
         rpc: {
             host: string;

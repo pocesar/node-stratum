@@ -5,7 +5,7 @@ import { EventEmitter } from "eventemitter3";
 
 const debug = Debug("stratum");
 
-export default class Base extends EventEmitter {
+export class Base extends EventEmitter {
   static debug(...msg: any[]) {
     debug(this.constructor.name + ": ", ...msg);
 

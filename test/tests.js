@@ -3,7 +3,7 @@
 
 var
   expect = require('expect.js'),
-  stratum = require('../lib').default,
+  stratum = require('../lib'),
   sinon = require('sinon'),
   _ = require('lodash'),
   net = require('net'),
@@ -565,7 +565,7 @@ module.exports = {
           client.setLastActivity(1);
           expect(client.lastActivity).to.be(1);
           done();
-        }, 0);
+        }, 10);
       },
 
       'events emitted from underlaying socket': function(done){

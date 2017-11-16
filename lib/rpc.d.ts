@@ -1,5 +1,5 @@
-import Base from "./base";
-export default class RPC extends Base {
+import { Base } from "./base";
+export declare class RPC extends Base {
     opts: any;
     server: any;
     _server: any;

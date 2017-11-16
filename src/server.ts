@@ -1,21 +1,21 @@
-"use strict";
-
-import Base from "./base";
-import RPCServer from "./rpc";
+import { Base } from "./base";
+import { RPC } from "./rpc";
 const toobusy = require("toobusy-js");
 import * as net from "net";
-import Daemon from "./daemon";
-import Client from "./client";
+import { Daemon, Options } from "./daemon";
+import { Client } from "./client";
 const curry = require("better-curry");
 import * as q from "bluebird";
 import * as _ from "lodash";
+import { Tuple } from './stratumerror'
 
-export default class Server extends Base {
-  clients
-  daemons
-  opts
-  rpc: RPCServer
-  server: net.Server
+
+export class Server extends Base {
+  clients;
+  daemons;
+  opts;
+  rpc: RPC;
+  server: net.Server;
 
   constructor(opts?) {
     super();
@@ -30,7 +30,7 @@ export default class Server extends Base {
     self.opts = _.defaults(_.clone(opts), Server.defaults);
 
     if (opts.rpc) {
-      self.rpc = new RPCServer(self.opts.rpc);
+      self.rpc = new RPC(self.opts.rpc);
 
       self.expose("mining.connections");
       self.expose("mining.block");
@@ -232,7 +232,9 @@ export default class Server extends Base {
         }
       } else {
         reject(
-          new Error(Server.debug('sendToId command doesnt exist "' + type + '"'))
+          new Error(
+            Server.debug('sendToId command doesnt exist "' + type + '"')
+          )
         );
       }
     });
@@ -280,10 +282,14 @@ export default class Server extends Base {
             reject(new Error(Server.debug("No clients connected")));
           }
         } else {
-          reject(new Error(Server.debug('Invalid broadcast type "' + type + '"')));
+          reject(
+            new Error(Server.debug('Invalid broadcast type "' + type + '"'))
+          );
         }
       } else {
-        reject(new Error(Server.debug("Missing type and data array parameters")));
+        reject(
+          new Error(Server.debug("Missing type and data array parameters"))
+        );
       }
     });
   }
@@ -352,15 +358,11 @@ export default class Server extends Base {
               socket.setLastActivity();
 
               // Resolved, call the method and send data to socket
-              var accept = Server.bindCommand(
-                socket,
-                method[1],
-                command.id
-              );
+              var accept = Server.bindCommand(socket, method[1], command.id);
               // Rejected, send error to socket
               var reject = Server.bindCommand(socket, "error", command.id);
 
-              (new q(function(resolve, reject) {
+              new q(function(resolve, reject) {
                 self.emit(
                   "mining",
                   command,
@@ -370,7 +372,9 @@ export default class Server extends Base {
                   },
                   socket
                 );
-              })).spread(accept).catch(reject);
+              })
+                .spread(accept)
+                .catch(reject);
             } else {
               throw new Error(
                 "(" +
@@ -430,7 +434,7 @@ export default class Server extends Base {
   static expose(base, name) {
     return function serverExposedFunction(args, connection, callback) {
       return new q(function(resolve, reject) {
-        RPCServer.debug('Method "' + name + '": ' + args);
+        RPC.debug('Method "' + name + '": ' + args);
 
         base.emit("rpc", name, args, connection, {
           resolve,
@@ -440,12 +444,12 @@ export default class Server extends Base {
         function serverExposedResolve(res) {
           res = [].concat(res);
 
-          RPCServer.debug('Resolve "' + name + '": ' + res);
+          RPC.debug('Resolve "' + name + '": ' + res);
 
           callback.call(base, null, [res[0]]);
         },
         function serverExposedReject(err) {
-          RPCServer.debug('Reject "' + name + '": ' + err);
+          RPC.debug('Reject "' + name + '": ' + err);
 
           callback.call(base, [].concat(err)[0]);
         }
@@ -487,7 +491,13 @@ export default class Server extends Base {
      *
      * @returns {Q.promise}
      */
-    subscribe(id?, difficulty?, subscription?, extranonce1?, extranonce2_size?) {
+    subscribe(
+      id?,
+      difficulty?,
+      subscription?,
+      extranonce1?,
+      extranonce2_size?
+    ) {
       var ret;
       if ((ret = Server.invalidArgs(id, "subscribe", 4, arguments)) !== true) {
         return ret;
@@ -701,7 +711,7 @@ export default class Server extends Base {
     }
   };
 
-  static errors = {
+  static errors: Record<string, Tuple> = {
     FEE_REQUIRED: [-10, "Fee required", null],
     SERVICE_NOT_FOUND: [-2, "Service not found", null],
     METHOD_NOT_FOUND: [-3, "Method not found", null],
@@ -716,7 +726,7 @@ export default class Server extends Base {
   /**
    * Coin daemons, will spawn a process for each enabled process
    */
-  static daemons = {
+  static daemons: Record<string, Options> = {
     bitcoin: {
       name: "Bitcoin",
       path: "/usr/bin/bitcoind", // path to the coind daemon to spawn
@@ -816,6 +826,6 @@ export default class Server extends Base {
   };
 }
 
-Server.commands.notify['broadcast'] = true;
-Server.commands.set_difficulty['broadcast'] = true;
-Server.commands.error['serverOnly'] = true;
+Server.commands.notify["broadcast"] = true;
+Server.commands.set_difficulty["broadcast"] = true;
+Server.commands.error["serverOnly"] = true;

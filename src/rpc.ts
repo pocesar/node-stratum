@@ -2,10 +2,10 @@
 
 const rpc = require("json-rpc2");
 import * as crypto from "crypto";
-import Base from "./base";
+import { Base } from "./base";
 import * as _ from "lodash";
 
-export default class RPC extends Base {
+export class RPC extends Base {
   opts: any;
   server: any;
   _server: any;

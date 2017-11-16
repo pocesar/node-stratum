@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/pocesar/node-stratum.svg?branch=master)](https://travis-ci.org/pocesar/node-stratum)
 [![Coverage Status](https://coveralls.io/repos/pocesar/node-stratum/badge.png)](https://coveralls.io/r/pocesar/node-stratum)
+[![Dependency Status](https://gemnasium.com/pocesar/node-stratum.svg)](https://gemnasium.com/pocesar/node-stratum)
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
@@ -11,16 +12,13 @@ This is not a ready-to-use miner pool, you may use this server to implement your
 
 ## Highlights
 
-* Defer and promise based code instead of callbacks (avoid callback hell)
 * Simple but powerful API for managing both server and client
 * Build-in support for spawn coins daemons (`bitcoind`, `litecoind`, etc) process and accept RPC calls
 * Easy for you to add your own procedures do the RPC server (using `expose`)
 * No need to worry about `.conf` files for the daemons, everything is passed through command line the best way possible (but you may override arguments)
-* Optimized code reuse with class methods and dependency injection
 * All classes based on `EventEmitter` by default (through the `Base` class)
 * The client part make it easy, along with an RPC server, to setup your own farming pool for coins
 * You can create a proxy from it using the `Client` interface, mix up Stratum with your own RPC definition and commands
-* It's up to you to choose the logging module (like `winston`)
 
 ## Install
 
@@ -46,7 +44,7 @@ This command is called automatically if you set the `coind` options, they are fo
 var Server = require('stratum').Server;
 
 // these settings can be changed using Server.defaults as well, for every new server up
-var server = Server.create({
+var server = new Server({
   /**
    * RPC to listen interface for this server
    */
@@ -123,7 +121,7 @@ You can connect to Stratum servers as well:
 ```js
 var Client = require('stratum').Client;
 
-client = Client.create();
+client = new Client();
 
 client.connect({
     host: 'localhost',
@@ -148,69 +146,6 @@ The following documentation expects that:
 
 ```js
 var stratum = require('stratum');
-```
-
-This module is really modular, you may use just one part of it, without having to touch other classes. For example, you may
-use the `stratum.Client` and the `stratum.RPCServer` without `stratum.Daemon` or `stratum.Server`.
-
-You may, at any time, extend, overload or override any classes methods and instance methods (because it uses [ES5Class](https://github.com/pocesar/ES5-Class) module):
-
-```js
-stratum.Server.implement({
-    myOwnClassMethodObject: {
-    }
-});
-
-stratum.Server.myOwnClassMethodObject;
-
-stratum.Server.include({
-    niftyFunction: function(isit){
-        this.nifty = isit;
-    }
-});
-
-var server = stratum.Server.create();
-server.niftyFunction(true);
-server.nifty // true
-```
-
-**WARNING**: This actually changes the original class. You may create your derived own class using:
-
-```js
-var MyNewServer = stratum.Server.define('MyNewServer', {
-    // Add your functions here
-});
-```
-
-The `MyNewServer` class will inherit everything from `stratum.Server`, but will retain all it's functionality.
-Use `$super()` to call overloaded methods:
-
-```js
-var MyNewServer = stratum.Server.define('MyNewServer', {
-    sendToIt: function(){
-        this.$super(); // call the original function sendToId
-    }
-});
-```
-
-Notice that most of the functions that would return a callback (Node style), it return a deferred promise. If you are
-not sure about how to use promises, go read [q module page](http://github.com/kriskowal/q)
-
-Basically, with promises, you can resolve or reject a "future" value to something. It's more or less a callback, but
-it's centralized on one instance, that is the deferred.
-
-```js
-server.listen().then(
-    // first parameter is the "resolved" or "success"
-    function(){
-    },
-    // second parameter is the "rejected" or "fail",
-    function(){
-    },
-    // third parameter is the "progress", and it's not used anywhere in this module at the moment
-    function(){
-    }
-);
 ```
 
 ### Base
@@ -258,7 +193,7 @@ stratum.Server.commands.hashes = function(id, any, params, you, want, to, pass, 
 
 // the event `mining.hashes` will be fired on the callback
 
-server.on('mining', function(req, deferred){
+server.on('mining', function(req, deferred) {
     if (req.method === 'hashes'){
         deferred.resolve([any, params, you, want, to, pass, to, the, client]);
         // or reject
@@ -298,12 +233,12 @@ It's mainly useful to receive notifications (wallet, block and alert), like the 
 It's advised to bind the `RPCServer` instance to either `localhost` or an internal IP range, and/or access through trusted proxies.
 
 ```js
-var rpc = stratum.RPCServer.create({
-          'mode': 'tcp', // can be 'tcp', 'http', 'both' (can handle TCP and HTTP/Websockets on one port)
-          'port': 9999,
-          'host': 'localhost', // bind to localhost
-          'password': 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3' // SHA256 hash of the password, no plain text!
-        });
+const rpc = new stratum.RPCServer({
+    'mode': 'tcp', // can be 'tcp', 'http', 'both' (can handle TCP and HTTP/Websockets on one port)
+    'port': 9999,
+    'host': 'localhost', // bind to localhost
+    'password': 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3' // SHA256 hash of the password, no plain text!
+});
 
 rpc.listen(); // listens on port 9999, binding to localhost
 
@@ -330,7 +265,7 @@ You may also test your pool sending arbitrary test data to see if it's respondin
 If your URL starts with 'stratum+tcp://', remove it!
 
 ```js
-var client = stratum.Client.create();
+var client = new stratum.Client();
 
 client.on('mining.error', function(message){
 });
@@ -378,43 +313,31 @@ stratum.Server.daemons['sillycoin'] = {
 You can start issuing commands to the daemon BEFORE calling `start()`, usually when you already have it running. `start()` will attempt to spawn the process.
 
 ```js
-var daemon = stratum.Daemon.create({
-        'path': '/usr/bin/sillycoind',
-        'name': 'SillyCoin',
-        'user': 'rpcuser',
-        'password': 'rpcpassword',
-        'port': 0xDEAD,
-        'host': 'localhost',
-        'args': ['debug']
-    });
+var daemon = new stratum.Daemon({
+    'path': '/usr/bin/sillycoind',
+    'name': 'SillyCoin',
+    'user': 'rpcuser',
+    'password': 'rpcpassword',
+    'port': 0xDEAD,
+    'host': 'localhost',
+    'args': ['debug']
+});
 
-daemon.start();
+async function start() {
+    daemon.start();
 
-daemon.call('getinfo', []).then(
-    // daemon returned a result
-    function(result){
+    try {
+        const result = await daemon.call('getinfo', []);
+        // daemon returned a result
         console.log(result.balance);
-    },
-    // daemon returned an error
-    function(result){
+    } catch (result) {
+        // daemon returned an error
         console.log(result); // usually "Command timed out" or "Unauthorized access"
     }
-);
+}
+
+start();
 ```
-
-### Utils
-
-Node-Stratum comes with a few already used common util libraries, that can be accessed through `stratum.*`, that are:
-
-* Lo-dash through `stratum.lodash`
-* Filesystem through `stratum.fs`
-* TCP through `stratum.net`
-* UUID through `stratum.uuid`
-* Promises through `stratum.q`
-* JSON RPC 2.0 through `stratum.rpc`
-* Partial functions through `stratum.curry`
-
-Use at will.
 
 ## Debugging
 
@@ -424,8 +347,6 @@ You can additionally set `DEBUG=stratum,jsonrpc` to also see the RPC part in-dep
 
 ## Wanna support the development?
 
-`BTC: 1EAfhxEUu1VsEEAAXk3MtTXK3LCrWDhejj`
+`BTC: 13nEfe1J8VTYSTu1c5nEkq9RPUM6eTj4d6`
+`BCH: 17MzTvz7Ca8yFGPETzxfTwGmjEBnLjzgpq`
 
-```bash
-npm star stratum
-```

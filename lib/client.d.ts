@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /// <reference types="bluebird" />
-import Base from "./base";
+import { Base } from "./base";
 import * as net from "net";
 import * as q from "bluebird";
 /**
@@ -8,7 +8,7 @@ import * as q from "bluebird";
  * @param {Boolean} isServer
  * @constructor
  */
-export default class Client extends Base {
+export declare class Client extends Base {
     currentId: number;
     socket: net.Socket;
     authorized: boolean;

@@ -1,17 +1,18 @@
-import Base from "./base";
+import { Base } from "./base";
 const curry = require("better-curry");
-import Server from "./server";
+import { Server } from "./server";
 import * as net from "net";
 import * as q from "bluebird";
 import * as uuid from "uuid";
 import _ = require("lodash");
+import { StratumError } from "./stratumerror";
 
 /**
  * @param {Socket} socket
  * @param {Boolean} isServer
  * @constructor
  */
-export default class Client extends Base {
+export class Client extends Base {
   // although BFGMiner starts at id 0, we start at 1, because it makes sense
   currentId: number;
   // our TCP_NODELAY and KeepAlive'd socket
@@ -65,8 +66,10 @@ export default class Client extends Base {
     });
 
     if (isServer !== true) {
+      const curried = curry.predefine(self.handleData, [self], self);
+
       self.socket.on("data", function clientSocketData(data) {
-        curry.predefine(self.handleData, [self], self)(data);
+        curried(data);
       });
     }
   }
@@ -321,7 +324,7 @@ export default class Client extends Base {
 
       return this.send(JSON.stringify(data) + "\n");
     } else {
-      var error = Client.debug(Server.errors.UNAUTHORIZED_WORKER);
+      var error = new Error(Client.debug(Server.errors.UNAUTHORIZED_WORKER));
 
       this.emit("mining.error", error);
 

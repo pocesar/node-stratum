@@ -1,14 +1,29 @@
 /// <reference types="node" />
 /// <reference types="bluebird" />
-import { spawn } from "child_process";
-import Base from "./base";
+import { spawn, ChildProcess } from "child_process";
+import { Base } from "./base";
 import * as q from "bluebird";
-export default class Daemon extends Base {
+export interface Options {
+    name?: string;
+    path?: string;
+    user?: string;
+    password?: string;
+    port?: number;
+    rpcserver?: {
+        notify?: any;
+        notifyPath?: any;
+    };
+    notify?: string;
+    datadir?: string;
+    host?: string;
+    args?: string[];
+}
+export declare class Daemon extends Base {
     spawn: typeof spawn;
     opts: any;
     name: string;
     rpc: any;
-    process: any | null;
+    process: ChildProcess | null;
     constructor(opts?: any);
     /**
      * Starts the daemon process.
