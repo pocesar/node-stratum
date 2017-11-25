@@ -1,0 +1,9 @@
+test
+src
+node_modules
+examples
+coverage
+tsconfig.json
+.travis.yml
+README.md
+jsconfig.json
