@@ -261,7 +261,7 @@ export default class Client extends Base {
     return this.stratumSend(
       {
         method: "mining.subscribe",
-        id: this.currentId,
+        id: this.currentId++,
         params: typeof UA !== "undefined" ? [UA] : []
       },
       true
@@ -279,7 +279,7 @@ export default class Client extends Base {
     return this.stratumSend(
       {
         method: "mining.authorize",
-        id: this.currentId,
+        id: this.currentId++,
         params: [user, pass]
       },
       true
@@ -301,7 +301,7 @@ export default class Client extends Base {
 
     return this.stratumSend({
       method: "mining.submit",
-      id: this.currentId,
+      id: this.currentId++,
       params: [worker, job_id, extranonce2, ntime, nonce]
     });
   }
