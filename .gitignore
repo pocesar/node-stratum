@@ -17,3 +17,10 @@ npm-debug.log
 coverage
 node_modules
 lib
+
+examples/*.js
+examples/*.d.ts
+examples/*.map
+test/*.d.ts
+test/*.js
+test/*.map

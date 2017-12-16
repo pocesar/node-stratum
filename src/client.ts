@@ -143,9 +143,12 @@ export class Client extends Base {
           break;
       }
 
-      self.emit("mining", command, self, "result", self.pending[command["id"]]);
+      const cmd = self.pending[command["id"]];
 
       delete self.pending[command["id"]];
+
+      self.emit("mining", command, self, "result", cmd);
+
     } else if (_.has(command, "id") && _.has(command, "result")) {
       // regular result that wasnt issued by this socket
 
@@ -264,7 +267,7 @@ export class Client extends Base {
     return this.stratumSend(
       {
         method: "mining.subscribe",
-        id: this.currentId,
+        id: this.currentId++,
         params: typeof UA !== "undefined" ? [UA] : []
       },
       true
@@ -282,7 +285,7 @@ export class Client extends Base {
     return this.stratumSend(
       {
         method: "mining.authorize",
-        id: this.currentId,
+        id: this.currentId++,
         params: [user, pass]
       },
       true
@@ -304,7 +307,7 @@ export class Client extends Base {
 
     return this.stratumSend({
       method: "mining.submit",
-      id: this.currentId,
+      id: this.currentId++,
       params: [worker, job_id, extranonce2, ntime, nonce]
     });
   }
@@ -320,7 +323,7 @@ export class Client extends Base {
    */
   stratumSend(data, bypass?, name?) {
     if (this.authorized === true || bypass === true) {
-      this.pending[data.id || this.currentId++] = name || data.method;
+      this.pending[data.id || ++this.currentId] = name || data.method;
 
       return this.send(JSON.stringify(data) + "\n");
     } else {

@@ -1,17 +1,16 @@
-/*jshint loopfunc:true,forin:false*/
 'use strict';
 
-var
-  expect = require('expect.js'),
-  stratum = require('../lib'),
-  sinon = require('sinon'),
-  _ = require('lodash'),
-  net = require('net'),
-  q = require('bluebird'),
-  path = require('path'),
-  rpc = require('json-rpc2'),
-  EventEmitter = stratum.Base,
-  child_process;
+import { expect } from 'chai'
+
+import * as stratum from '../lib'
+import * as sinon from 'sinon'
+import * as _ from 'lodash'
+import * as net from 'net'
+import * as Bluebird from 'bluebird'
+import * as path from 'path'
+import * as rpc from 'json-rpc2'
+
+let child_process: any;
 
 function promisesArray(defers){
   var out = [];

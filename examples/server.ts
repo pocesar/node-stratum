@@ -1,6 +1,6 @@
-var stratum = require('../lib'),
-    Server = stratum.Server,
-    server = Server.$create();
+import { Server } from '../lib';
+
+const server = new Server();
 
 server.on('mining', function(req, deferred, socket){
   // req is {method:"", id:0, params: []}

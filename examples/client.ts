@@ -1,9 +1,9 @@
-var stratum = require('../lib');
+import { Client } from '../lib';
 
-var client = stratum.Client.$create();
+const client = new Client()
 
- //must be specified per EventEmitter requirements
-client.on('error', function(socket, err){
+//must be specified per EventEmitter requirements
+client.on('error', function (socket, err) {
   socket.destroy();
   console.log('Connection closed with error: ', err);
   process.exit(1);
@@ -12,14 +12,14 @@ client.on('error', function(socket, err){
 // this usually happens when we are not authorized to send commands (the server didn't allow us)
 // or share was rejected
 // Stratum errors are usually an array with 3 items [int, string, null]
-client.on('mining.error', function(msg, socket){
+client.on('mining.error', function (msg, socket) {
   console.log(msg);
 });
 
 var submitted = false;
 
 // the client is a one-way communication, it receives data from the server after issuing commands
-client.on('mining', function(data, socket, type){
+client.on('mining', function (data, socket, type) {
   // type will be either 'broadcast' or 'result'
   console.log('Mining data: ' + type + ' = ', data);
   // you can issue more commands to the socket, it's the exact same socket as "client" variable
@@ -38,14 +38,14 @@ client.on('mining', function(data, socket, type){
       // server sent a new block
       break;
     default:
-      if (!socket.authorized){
+      if (!socket.authorized) {
         console.log('Asking for authorization');
-        socket.stratumAuthorize('user','pass');
+        socket.stratumAuthorize('user', 'pass');
       } else {
         console.log('We are authorized');
         if (!submitted) {
           console.log('Lets submit fake data once for test purposes, then close');
-          socket.stratumSubmit('', '' ,'' ,' ', '').done(function(){
+          socket.stratumSubmit('', '', '', ' ', '').done(function () {
             client.destroy(); // after call to destroy, "client" doesnt exist anymore
           });
           submitted = true;
@@ -57,26 +57,24 @@ client.on('mining', function(data, socket, type){
 client.connect({
   host: 'localhost',
   port: 3333
-}).then(function (socket){
-    // defered, this can be chained if needed, no callback hell
-    // "socket" refers to the current client, in this case, the 'client'
-    // variable
-    console.log('Connected! lets ask for subscribe');
+}).then(function (socket) {
+  // defered, this can be chained if needed, no callback hell
+  // "socket" refers to the current client, in this case, the 'client'
+  // variable
+  console.log('Connected! lets ask for subscribe');
 
-    // After the first stratumSubscribe, the data will be handled internally
-    // and returned deferreds to be resolved / rejected through the event 'mining'
-    // above
-    socket.stratumSubscribe('Node.js Stratum').then(
-      // This isn't needed, it's handled automatically inside the Client class
-      // but if you want to deal with anything special after subscribing and such.
-      function(socket){
-        console.log('Sent!');
-      },
-      function(error){
-        console.log('Error');
-      }
-    );
-  })
-  // this can be chained and is the last callback to execute
-  //.done(function(){ });
-;
+  // After the first stratumSubscribe, the data will be handled internally
+  // and returned deferreds to be resolved / rejected through the event 'mining'
+  // above
+  socket.stratumSubscribe('Node.js Stratum').then(
+    // This isn't needed, it's handled automatically inside the Client class
+    // but if you want to deal with anything special after subscribing and such.
+    function (socket) {
+      console.log('Sent!');
+    },
+    function (error) {
+      console.log('Error');
+    }
+  );
+})
+  ;

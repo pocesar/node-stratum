@@ -35,8 +35,13 @@
     "socket"
   ],
   "dependencies": {
+    "@types/bluebird": "^3.5.18",
+    "@types/commander": "^2.12.2",
+    "@types/debug": "^0.0.30",
+    "@types/lodash": "^4.14.91",
+    "@types/uuid": "^3.4.3",
     "source-map-support": "^0.5.0",
-    "commander": "^2.11.0",
+    "commander": "^2.12.2",
     "chalk": "^2.3.0",
     "json-rpc2": "^1.0.2",
     "debug": "^3.1.0",
@@ -44,29 +49,23 @@
     "lodash": "^4.17.4",
     "bluebird": "^3.5.1",
     "uuid": "^3.1.0",
-    "eventemitter3": "^2.0.3",
+    "eventemitter3": "^3.0.0",
     "better-curry": "^1.6.0"
   },
   "devDependencies": {
-    "@types/mocha": "^2.2.43",
-    "@types/sinon": "^2.3.7",
-    "@types/bluebird": "^3.5.17",
-    "@types/lodash": "^4.14.80",
-    "@types/commander": "^2.11.0",
-    "@types/debug": "^0.0.30",
-    "@types/expect.js": "^0.3.29",
-    "@types/uuid": "^3.4.3",
-    "typescript": "^2.5.3",
+    "@types/mocha": "^2.2.44",
+    "@types/sinon": "^4.1.2",
+    "@types/chai": "^4.0.10",
+    "typescript": "^2.6.2",
+    "chai": "^4.1.2",
     "mocha": "^4.0.1",
-    "expect.js": "^0.3.1",
-    "sinon": "^4.0.2",
-    "istanbul": "^0.4.5",
-    "coveralls": "^3.0.0",
-    "mocha-lcov-reporter": "^1.3.0"
+    "sinon": "^4.1.3",
+    "nyc": "^11.3.0",
+    "coveralls": "^3.0.0"
   },
   "scripts": {
-    "test": "mocha",
-    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha",
-    "coveralls": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --report lcovonly && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
+    "test": "node ./node_modules/typescript/bin/tsc -p tests.json && mocha test",
+    "coverage": "nyc mocha test",
+    "coveralls": "nyc mocha test && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
   }
 }

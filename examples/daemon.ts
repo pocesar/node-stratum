@@ -1,5 +1,4 @@
-var stratum = require('../lib'),
-    Daemon = stratum.Daemon;
+import {  Daemon } from '../lib';
 
 var daemon = new Daemon({
   user: 'user',

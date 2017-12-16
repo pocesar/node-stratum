@@ -345,8 +345,14 @@ Export/set the environment variable `DEBUG=stratum` on your command line before 
 
 You can additionally set `DEBUG=stratum,jsonrpc` to also see the RPC part in-depth (for `stratum.Daemon` and `stratum.RPCServer`)
 
-## Wanna support the development?
+# Development
 
-`BTC: 13nEfe1J8VTYSTu1c5nEkq9RPUM6eTj4d6`
-`BCH: 17MzTvz7Ca8yFGPETzxfTwGmjEBnLjzgpq`
-
+* BTC: `16QDbqa6UMFtMCdDcJJ5N2bqryH4Q56BVU`
+* BCH: `1E6gKfkyxsjr2rSbcHbnfsQumKxkGKwRYc`
+* ETH: `0xfF9087E7112d3b7D7B5bDD6C9ffb0970ACC162E7`
+* MIOTA: `NNIH9VGEQFZAJIITBO9FEDSYUDYXHMAINGSKWIU9ADUHYYNTIYGJADZITOCVMWEFTKJGCNCJN9ZRFUZKCPSUOMDAKD`
+* NXT: `NXT-7TJT-8NS2-8QBS-5Y89X`
+* BTG: `GY2RWXUKYDmYDaroMmucgUdF7dLqaHDKWu`
+* XEM: `NBC772-Q3SL4X-AGVNMP-JAWGJE-U6BCSB-Q7WNAX-YU5V`
+* DASH: `XaqxcT3BDmSLGB4M6ozrET1qJPBA4RJpng`
+* XRB: `xrb_3fi16pk4gyz331r4531m7jywrfsgp3h31yoyfusac77esuamh65r5kwjz7dm`
