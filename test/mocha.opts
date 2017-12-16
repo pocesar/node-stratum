@@ -1,5 +1,5 @@
 --reporter list
---ui exports
+--ui tdd
 --check-leaks
 --exit
 --timeout 5000

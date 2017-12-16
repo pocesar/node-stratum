@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/pocesar/node-stratum.svg?branch=master)](https://travis-ci.org/pocesar/node-stratum)
 [![Coverage Status](https://coveralls.io/repos/pocesar/node-stratum/badge.png)](https://coveralls.io/r/pocesar/node-stratum)
-[![Dependency Status](https://gemnasium.com/pocesar/node-stratum.svg)](https://gemnasium.com/pocesar/node-stratum)
+[![Dependency Status](https://gemnasium.com/badges/github.com/pocesar/node-stratum.svg)](https://gemnasium.com/github.com/pocesar/node-stratum)
 
 [![NPM](https://nodei.co/npm/stratum.png?downloads=true)](https://nodei.co/npm/stratum/)
 
