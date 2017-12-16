@@ -698,6 +698,32 @@ export default class Server extends Base {
         true,
         "set_difficulty"
       );
+    },
+     /**
+     * Set the target
+     *
+     * @param {Number} id
+     * @param {String} value
+     * @returns {Q.promise}
+     */
+    set_target(id?, value?) {
+      var ret;
+      if (
+        (ret = Server.invalidArgs(false, "set_target", 1, arguments)) !==
+        true
+      ) {
+        return ret;
+      }
+
+      return this.stratumSend(
+        {
+          id: null,
+          method: "mining.set_target",
+          params: [value]
+        },
+        true,
+        "set_target"
+      );
     }
   };
 
@@ -818,4 +844,5 @@ export default class Server extends Base {
 
 Server.commands.notify['broadcast'] = true;
 Server.commands.set_difficulty['broadcast'] = true;
+Server.commands.set_target['broadcast'] = true;
 Server.commands.error['serverOnly'] = true;
