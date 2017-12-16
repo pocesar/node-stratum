@@ -110,6 +110,7 @@ export default class Server extends Base {
         get_transactions(id?: any, merkles?: any): any;
         notify(id?: any, job_id?: any, previous_hash?: any, coinbase1?: any, coinbase2?: any, branches?: any, block_version?: any, nbit?: any, ntime?: any, clean?: any): any;
         set_difficulty(id?: any, value?: any): any;
+        set_target(id?: any, value?: any): any;
     };
     static errors: {
         FEE_REQUIRED: (string | number)[];
