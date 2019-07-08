@@ -50,7 +50,8 @@
     "bluebird": "^3.5.1",
     "uuid": "^3.1.0",
     "eventemitter3": "^3.0.0",
-    "better-curry": "^1.6.0"
+    "better-curry": "^1.6.0",
+    "snyk": "^1.192.3"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.44",
@@ -66,6 +67,9 @@
   "scripts": {
     "test": "node ./node_modules/typescript/bin/tsc -p tests.json && mocha test",
     "coverage": "nyc mocha test",
-    "coveralls": "nyc mocha test && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js"
-  }
+    "coveralls": "nyc mocha test && cat ./coverage/lcov.info | node ./node_modules/coveralls/bin/coveralls.js",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
+  },
+  "snyk": true
 }
